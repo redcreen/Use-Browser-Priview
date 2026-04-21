@@ -20,6 +20,7 @@
 | VS Code 远程一条命令安装 | 机器可以通过 curl 访问公开仓库 | 执行 `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`，重启扩展宿主后在 VS Code 里对 Markdown 右键 | 不需要先 clone 仓库也能完成安装，并且 VS Code 右键入口可用 |
 | 只装 Finder | macOS，尚未安装 Finder 路径 | 执行 `bash install.sh --finder`，然后在 Finder 里对文件夹项右键 | Finder Quick Action 出现且可用，不依赖 VS Code 扩展安装 |
 | 全量安装 | macOS，干净环境或历史安装环境 | 执行 `bash install.sh` | VS Code 和 Finder 两条入口一次安装完成 |
+| 安装 Codex app patch | macOS，已安装 Codex 桌面 app | 执行 `bash install.sh --codex-app`，彻底退出并重开 Codex，然后在 Codex 里对文件链接右键 | `Open With` 里出现 `Use Browser Priview`，且不影响普通 VS Code / Finder 安装路径 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | Markdown 相对链接 | 浏览器已经打开 Markdown | 点击相对 Markdown 链接 | 目标 Markdown 继续以渲染页打开，不变成 raw 下载 |
@@ -36,17 +37,24 @@
 - `node --check adapters/vscode/open-finder-preview.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
 - `bash -n adapters/vscode/install-macos-finder-quick-action.sh`
+- `node --check adapters/codex-app/patch-codex-open-with.js`
+- `bash -n adapters/codex-app/open-codex-preview.sh`
+- `bash -n adapters/codex-app/install-codex-app.sh`
+- `bash -n adapters/codex-app/uninstall-codex-app.sh`
 - `bash -n install.command`
 - `bash -n install-vscode.command`
 - `bash -n install-finder.command`
+- `bash -n install-codex-app.command`
 - 本地 smoke test：`WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`
+- Codex 桌面 patch 约束：`node tests/validate-codex-app-patch.mjs`
 
 ## 手工检查
 
 - Finder 对文件夹项右键时能看到 `Use Browser Priview`
 - Finder 触发后浏览器有明确可见动作，而不是静默没反应
 - Codex / VS Code 右键时只会看到一个 `Use Browser Priview`
+- 安装可选 patch 并重开 Codex 后，在 Codex 文件链接右键的 `Open With` 里能看到 `Use Browser Priview`
 - Codex / VS Code 不再出现 `Docs Live` 或 `Use Browser Priview` 状态栏按钮
 - Finder 和编辑器两个入口打开后，看到的是同一类浏览器预览体验
 
@@ -65,5 +73,6 @@
 - Codex / VS Code adapter 也能通过远程一条命令安装，不依赖本地先 clone 仓库
 - Finder Quick Action 能通过 `bash install.sh --finder` 装上，且不依赖 VS Code 扩展安装
 - `bash install.sh` 能一次安装两条入口
+- `bash install.sh --codex-app` 能单独 patch Codex app，而不改变普通 VS Code / Finder 安装语义
 - Finder 和 VS Code / Codex 对同一个项目根会复用同一个端口
 - 上面的核心验收用例在一台新机器上通过

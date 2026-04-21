@@ -26,6 +26,7 @@ Launch surfaces are the entry points that invoke the runtime:
 
 - macOS Finder Quick Action
 - Codex / VS Code context menu
+- Codex app internal file-link `Open With` menu via an explicit local patch
 - future editor adapters
 
 Launch surfaces should stay thin. They should select the correct target and then hand off to the runtime. They should not reimplement rendering rules.
@@ -35,6 +36,7 @@ Launch surfaces should stay thin. They should select the correct target and then
 Each host-specific adapter is packaged independently so it can match the host's install and UX model:
 
 - `adapters/vscode/`: first editor adapter
+- `adapters/codex-app/`: isolated installer / rollback path for the optional Codex desktop patch
 - future adapters: other editors that support context-menu extensions
 
 ## Current Transitional State
@@ -54,6 +56,7 @@ This is acceptable for the first standalone cut because it removes repo ownershi
 - Session reuse policy belongs to the runtime or a shared launcher layer, not to one editor only.
 - Finder-specific UX concerns such as selection discovery or browser activation stay inside the Finder launcher path.
 - Editor-specific UX concerns such as context-menu contribution stay inside the editor adapter.
+- Codex desktop patching concerns stay inside `adapters/codex-app/` so the normal VS Code / Finder paths do not inherit app-bundle patch logic.
 - The current VS Code adapter is intentionally right-click only. Persistent UI such as startup-driven `Docs Live` status indicators stays out of the adapter surface.
 
 ## Future Extraction Target

@@ -142,6 +142,7 @@ function testHelp() {
   });
   assert(output.includes("--vscode"), "Expected --help output to mention --vscode.");
   assert(output.includes("--finder"), "Expected --help output to mention --finder.");
+  assert(output.includes("--codex-app"), "Expected --help output to mention --codex-app.");
 }
 
 function testVscodeOnly() {

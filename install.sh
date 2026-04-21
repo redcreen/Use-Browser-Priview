@@ -17,16 +17,19 @@ Usage:
   bash install.sh [--all]
   bash install.sh --vscode
   bash install.sh --finder
+  bash install.sh --codex-app
   bash install.sh --help
 
 Remote:
   curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash
   curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode
+  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --codex-app
 
 Modes:
   --all      Install both the VS Code adapter and Finder Quick Action
   --vscode   Install only the VS Code / Codex adapter
   --finder   Install only the Finder Quick Action
+  --codex-app Install the experimental Codex app Open With patch
 EOF
 }
 
@@ -109,6 +112,9 @@ if [ "${1:-}" != "" ]; then
     --finder)
       MODE="finder"
       ;;
+    --codex-app)
+      MODE="codex-app"
+      ;;
     -h|--help)
       usage
       exit 0
@@ -185,6 +191,14 @@ install_finder() {
   bash "$finder_installer" "$FINDER_RUNTIME_DIR"
 }
 
+install_codex_app() {
+  if [ "$(uname -s)" != "Darwin" ]; then
+    echo "Codex app patch install requires macOS." >&2
+    exit 1
+  fi
+  bash "$REPO_ROOT/adapters/codex-app/install-codex-app.sh"
+}
+
 case "$MODE" in
   all)
     install_vscode
@@ -195,5 +209,8 @@ case "$MODE" in
     ;;
   finder)
     install_finder
+    ;;
+  codex-app)
+    install_codex_app
     ;;
 esac

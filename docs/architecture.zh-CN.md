@@ -26,6 +26,7 @@ Launch Surface 是触发入口：
 
 - macOS Finder Quick Action
 - Codex / VS Code 右键菜单
+- 通过显式本地 patch 接入的 Codex app 内部文件链接 `Open With` 菜单
 - 后续其他支持扩展的编辑器
 
 这些入口应该尽量薄。它们只负责把“当前应该打开哪个路径”交给 runtime，而不应该各自重写一套渲染逻辑。
@@ -35,6 +36,7 @@ Launch Surface 是触发入口：
 每个宿主的适配层应该独立打包，匹配宿主本身的安装和交互方式：
 
 - `adapters/vscode/`：第一批 editor adapter
+- `adapters/codex-app/`：可选 Codex 桌面 patch 的独立安装 / 回滚路径
 - 后续 `adapters/<future-editor>/`
 
 ## 当前过渡态
@@ -54,6 +56,7 @@ Launch Surface 是触发入口：
 - session / 端口复用策略应该放在 runtime 或共享 launcher 层，而不是某一个 editor 独占
 - Finder 专属问题，例如如何识别当前选中项、如何激活浏览器，只留在 Finder 启动链里
 - Editor 专属问题，例如上下文菜单注入，只留在 editor adapter 里
+- Codex 桌面 app 的 patch 逻辑只留在 `adapters/codex-app/`，不能把 app bundle patch 细节污染到普通 VS Code / Finder 路径
 - 当前 VS Code adapter 故意只保留右键入口，像启动即常驻的 `Docs Live` 状态指示这类持久 UI 不再放进 adapter 表面
 
 ## 后续目标形态
