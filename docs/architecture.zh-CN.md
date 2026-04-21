@@ -54,6 +54,7 @@ Launch Surface 是触发入口：
 - session / 端口复用策略应该放在 runtime 或共享 launcher 层，而不是某一个 editor 独占
 - Finder 专属问题，例如如何识别当前选中项、如何激活浏览器，只留在 Finder 启动链里
 - Editor 专属问题，例如上下文菜单注入，只留在 editor adapter 里
+- 当前 VS Code adapter 故意只保留右键入口，像启动即常驻的 `Docs Live` 状态指示这类持久 UI 不再放进 adapter 表面
 
 ## 后续目标形态
 

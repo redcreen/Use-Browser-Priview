@@ -9,10 +9,6 @@ const vscode = require("vscode");
 
 const COMMAND_ID = "redcreen.useBrowserPriview.open";
 const OUTPUT_NAME = "Use Browser Priview";
-const BUTTON_TEXT = "$(globe) Use Browser Priview";
-const LIVE_TEXT = "$(globe) Priview Live";
-const STARTING_TEXT = "$(sync~spin) Starting Priview";
-const OPENING_TEXT = "$(sync~spin) Opening Priview";
 const DOCS_STARTUP_LOG_REVEAL_MS = 2500;
 const DOCS_STARTUP_READY_ATTEMPTS = 120;
 const DOCS_STARTUP_READY_DELAY_MS = 100;
@@ -26,7 +22,6 @@ class WorkspaceDocBrowser {
   constructor(context) {
     this.context = context;
     this.output = vscode.window.createOutputChannel(OUTPUT_NAME);
-    this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 90);
     this.session = null;
     this.pendingOpen = null;
     this.serverCodeStamp = computeServerCodeStamp();
@@ -40,15 +35,10 @@ class WorkspaceDocBrowser {
   activate() {
     this.context.subscriptions.push(
       this.output,
-      this.statusBar,
       vscode.commands.registerCommand(COMMAND_ID, (targetUri) => this.open(targetUri)),
-      vscode.workspace.onDidChangeWorkspaceFolders(() => this.updateStatusBar()),
-      vscode.window.onDidChangeActiveTextEditor(() => this.updateStatusBar()),
       { dispose: () => { void this.disposeSession({ keepProcess: true }); } },
       this.watchOwnFilesForReload(),
     );
-    void this.restoreSessionForCurrentWorkspace();
-    this.updateStatusBar();
   }
 
   watchOwnFilesForReload() {
@@ -60,7 +50,6 @@ class WorkspaceDocBrowser {
       }
       this.selfRestartQueued = true;
       this.output.appendLine("[self-update] Extension code changed on disk. Restarting Extension Host.");
-      vscode.window.setStatusBarMessage("Workspace Doc Browser: extension updated, restarting Extension Host…", 4000);
       setTimeout(() => {
         void vscode.commands.executeCommand("workbench.action.restartExtensionHost");
       }, 150);
@@ -143,19 +132,7 @@ class WorkspaceDocBrowser {
     };
     this.session = session;
     this.output.appendLine(`[restore] ${workspaceRoot} -> ${session.baseUrl}`);
-    this.updateStatusBar();
     return session;
-  }
-
-  async restoreSessionForCurrentWorkspace() {
-    if (this.session && this.isSessionAlive(this.session)) {
-      return this.session;
-    }
-    const workspaceRoot = this.getWorkspaceRoot();
-    if (!workspaceRoot) {
-      return null;
-    }
-    return this.restorePersistedSession(workspaceRoot);
   }
 
   normalizeTargetUri(targetUri) {
@@ -255,26 +232,6 @@ class WorkspaceDocBrowser {
     return new URL(encodePathSegments(descriptor.relativePath), `${String(baseUrl || "").replace(/\/$/, "")}/`).toString();
   }
 
-  updateStatusBar() {
-    const workspaceRoot = this.getWorkspaceRoot();
-    if (!workspaceRoot) {
-      this.statusBar.hide();
-      return;
-    }
-    const isPending = Boolean(this.pendingOpen && this.pendingOpen.workspaceRoot === workspaceRoot);
-    const isLive = Boolean(this.session && this.session.workspaceRoot === workspaceRoot && this.isSessionLive(this.session));
-    this.statusBar.text = isPending
-      ? (this.pendingOpen.kind === "start" ? STARTING_TEXT : OPENING_TEXT)
-      : (isLive ? LIVE_TEXT : BUTTON_TEXT);
-    this.statusBar.tooltip = isPending
-      ? this.pendingOpen.detail
-      : isLive
-        ? `Open the live browser preview for ${path.basename(workspaceRoot)}`
-        : `Open ${path.basename(workspaceRoot)} in a browser as rendered Markdown`;
-    this.statusBar.command = COMMAND_ID;
-    this.statusBar.show();
-  }
-
   setPendingOpen(workspaceRoot, detail, kind) {
     this.clearPendingOpen();
     const pending = {
@@ -287,11 +244,9 @@ class WorkspaceDocBrowser {
         }
         this.output.appendLine(`[pending] ${detail}`);
         this.output.show(false);
-        vscode.window.setStatusBarMessage(`Workspace Doc Browser: ${detail}`, 4000);
       }, DOCS_STARTUP_LOG_REVEAL_MS),
     };
     this.pendingOpen = pending;
-    this.updateStatusBar();
   }
 
   clearPendingOpen() {
@@ -302,16 +257,14 @@ class WorkspaceDocBrowser {
       clearTimeout(this.pendingOpen.revealTimer);
     }
     this.pendingOpen = null;
-    this.updateStatusBar();
   }
 
   announceManualAction(workspaceRoot, kind) {
     const workspaceName = path.basename(workspaceRoot);
     const message = kind === "start"
-      ? `Workspace Doc Browser: starting docs for ${workspaceName}…`
-      : `Workspace Doc Browser: opening docs for ${workspaceName}…`;
+      ? `${OUTPUT_NAME}: starting preview for ${workspaceName}...`
+      : `${OUTPUT_NAME}: opening preview for ${workspaceName}...`;
     vscode.window.showInformationMessage(message);
-    vscode.window.setStatusBarMessage(message, 4000);
   }
 
   async openBrowserUrl(url, workspaceRoot, contextLabel, session) {
@@ -320,13 +273,12 @@ class WorkspaceDocBrowser {
     if (session && this.session === session) {
       session.browserOpened = Boolean(opened);
       void this.persistSession(session);
-      this.updateStatusBar();
     }
     if (!opened) {
       this.output.appendLine(`[browser-open-error] ${contextLabel}: VS Code could not hand the URL to the system browser.`);
       this.output.show(true);
       vscode.window.showWarningMessage(
-        `Workspace Doc Browser: ${contextLabel} for ${path.basename(workspaceRoot)} could not be opened in your browser. Check the Workspace Doc Browser output.`,
+        `${OUTPUT_NAME}: ${contextLabel} for ${path.basename(workspaceRoot)} could not be opened in your browser. Check the ${OUTPUT_NAME} output.`,
       );
     }
     return opened;
@@ -341,14 +293,13 @@ class WorkspaceDocBrowser {
         this.session = null;
       }
       await this.clearPersistedSession(workspaceRoot);
-      this.updateStatusBar();
       return false;
     }
     const targetUrl = this.getTargetUrl(session.baseUrl, workspaceRoot, targetUri);
     session.targetUri = this.normalizeTargetUri(targetUri);
-    this.setPendingOpen(workspaceRoot, `Opening docs preview for ${path.basename(workspaceRoot)}…`, "open");
+    this.setPendingOpen(workspaceRoot, `Opening browser preview for ${path.basename(workspaceRoot)}...`, "open");
     try {
-      await this.openBrowserUrl(targetUrl, workspaceRoot, "the docs preview", session);
+      await this.openBrowserUrl(targetUrl, workspaceRoot, "the browser preview", session);
     } finally {
       this.clearPendingOpen();
     }
@@ -356,7 +307,7 @@ class WorkspaceDocBrowser {
   }
 
   async startSession(workspaceRoot, targetUri) {
-    this.setPendingOpen(workspaceRoot, `Starting docs preview for ${path.basename(workspaceRoot)}…`, "start");
+    this.setPendingOpen(workspaceRoot, `Starting browser preview for ${path.basename(workspaceRoot)}...`, "start");
 
     try {
       const port = await findFreePort();
@@ -380,7 +331,6 @@ class WorkspaceDocBrowser {
       };
       this.session = session;
       await this.persistSession(session);
-      this.updateStatusBar();
       this.output.appendLine(`[start] ${workspaceRoot}`);
       this.output.appendLine(`[raw] ${baseUrl}`);
 
@@ -393,10 +343,9 @@ class WorkspaceDocBrowser {
       rawProcess.on("error", (error) => {
         this.clearPendingOpen();
         this.output.appendLine(`[error] ${String(error)}`);
-        vscode.window.showErrorMessage(`Workspace Doc Browser: ${String(error)}`);
+        vscode.window.showErrorMessage(`${OUTPUT_NAME}: ${String(error)}`);
         if (this.session === session) {
           this.session = null;
-          this.updateStatusBar();
         }
         void this.clearPersistedSession(workspaceRoot);
       });
@@ -406,14 +355,13 @@ class WorkspaceDocBrowser {
         const wasCurrentSession = this.session === session;
         if (wasCurrentSession) {
           this.session = null;
-          this.updateStatusBar();
         }
         void this.clearPersistedSession(workspaceRoot);
         if (code && code !== 0) {
-          vscode.window.showErrorMessage(`Workspace Doc Browser: preview backend exited with code ${code}.`);
+          vscode.window.showErrorMessage(`${OUTPUT_NAME}: preview backend exited with code ${code}.`);
           this.output.show(true);
         } else if (wasCurrentSession && signal !== "SIGTERM") {
-          vscode.window.showWarningMessage("Workspace Doc Browser: preview stopped.");
+          vscode.window.showWarningMessage(`${OUTPUT_NAME}: preview stopped.`);
         }
       });
 
@@ -422,13 +370,13 @@ class WorkspaceDocBrowser {
         return false;
       }
       const targetUrl = this.getTargetUrl(baseUrl, workspaceRoot, targetUri);
-      await this.openBrowserUrl(targetUrl, workspaceRoot, "the docs preview", session);
+      await this.openBrowserUrl(targetUrl, workspaceRoot, "the browser preview", session);
       return true;
     } catch (error) {
       this.output.appendLine(`[open-error] ${String(error)}`);
       this.output.show(true);
       vscode.window.showWarningMessage(
-        `Workspace Doc Browser: the docs server for ${path.basename(workspaceRoot)} did not become ready yet. Check the Workspace Doc Browser output for details.`,
+        `${OUTPUT_NAME}: the preview backend for ${path.basename(workspaceRoot)} did not become ready yet. Check the ${OUTPUT_NAME} output for details.`,
       );
       return false;
     } finally {
@@ -439,7 +387,7 @@ class WorkspaceDocBrowser {
   async open(targetUri) {
     const workspaceRoot = this.getWorkspaceRoot(targetUri);
     if (!workspaceRoot) {
-      vscode.window.showWarningMessage("Workspace Doc Browser: open a local folder first.");
+      vscode.window.showWarningMessage(`${OUTPUT_NAME}: open a local folder first.`);
       return;
     }
 
@@ -475,10 +423,6 @@ class WorkspaceDocBrowser {
     );
   }
 
-  isSessionLive(session = this.session) {
-    return Boolean(this.isSessionAlive(session) && session && session.browserOpened);
-  }
-
   async disposeSession(options = {}) {
     const keepProcess = Boolean(options.keepProcess);
     if (!this.session) {
@@ -487,7 +431,6 @@ class WorkspaceDocBrowser {
     const { process: childProcess, pid, workspaceRoot } = this.session;
     this.session = null;
     if (keepProcess) {
-      this.updateStatusBar();
       return;
     }
     if (childProcess && !childProcess.killed) {
@@ -500,7 +443,6 @@ class WorkspaceDocBrowser {
       } catch {}
     }
     await this.clearPersistedSession(workspaceRoot);
-    this.updateStatusBar();
   }
 }
 

@@ -54,6 +54,7 @@ This is acceptable for the first standalone cut because it removes repo ownershi
 - Session reuse policy belongs to the runtime or a shared launcher layer, not to one editor only.
 - Finder-specific UX concerns such as selection discovery or browser activation stay inside the Finder launcher path.
 - Editor-specific UX concerns such as context-menu contribution stay inside the editor adapter.
+- The current VS Code adapter is intentionally right-click only. Persistent UI such as startup-driven `Docs Live` status indicators stays out of the adapter surface.
 
 ## Future Extraction Target
 

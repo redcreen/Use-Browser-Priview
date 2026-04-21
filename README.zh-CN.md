@@ -40,6 +40,7 @@ bash install.sh
 
 - 第一批 Codex / VS Code adapter 到 `~/.vscode/extensions`
 - macOS Finder Quick Action：`Use Browser Priview`
+- 自动清理旧的 `redcreen.workspace-doc-browser-*` 安装，避免 VS Code 里出现重复入口
 
 ## 最简配置
 
@@ -63,6 +64,8 @@ Developer: Restart Extension Host
 4. 然后从下面两个入口之一打开：
 - Finder：对文件夹项右键，选择 `Use Browser Priview`
 - Codex / VS Code：对 Markdown 右键，选择 `Use Browser Priview`
+
+当前 VS Code 侧故意只保留右键入口，不再保留状态栏 `Docs Live` 按钮或命令面板快捷入口。
 
 ## 项目结构
 

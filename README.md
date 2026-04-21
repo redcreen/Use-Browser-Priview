@@ -38,6 +38,7 @@ What it installs now:
 
 - the first Codex / VS Code adapter into `~/.vscode/extensions`
 - the macOS Finder Quick Action `Use Browser Priview`
+- removes legacy `redcreen.workspace-doc-browser-*` installs so VS Code keeps a single `Use Browser Priview` entry
 
 ## Minimal Configuration
 
@@ -61,6 +62,8 @@ Developer: Restart Extension Host
 4. Use either of these entry points:
 - Finder: right-click a folder item, then choose `Use Browser Priview`
 - Codex / VS Code: right-click a Markdown file, then choose `Use Browser Priview`
+
+The current VS Code surface is intentionally right-click only. It does not keep a status-bar `Docs Live` button or a command-palette shortcut.
 
 ## Project Shape
 

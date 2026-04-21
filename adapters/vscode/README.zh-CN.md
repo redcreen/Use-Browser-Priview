@@ -6,7 +6,7 @@
 
 它会在 Codex / VS Code 里补三个浏览器预览入口：
 
-- 状态栏入口
+- Explorer 里对 Markdown 文件右键
 - Markdown 编辑区右键
 - Markdown 标签页右键
 
@@ -30,8 +30,7 @@ Developer: Restart Extension Host
 
 ## 它增加了什么
 
-- 状态栏左侧的 `Use Browser Priview` 按钮
-- 命令面板入口：`Use Browser Preview`
+- 仅保留右键入口
 - 目录、Markdown、文本、图片、视频的浏览器渲染
 - 本地预览会话复用
 - 更接近仓库浏览器，而不是单纯 raw server 的页面导航体验
@@ -40,3 +39,4 @@ Developer: Restart Extension Host
 
 - 这只是第一阶段的 adapter 抽离，不是最终共享 runtime 形态
 - 当前预览走的是轻量本地后端，不依赖 `mkdocs`
+- 执行 `bash install.sh` 时会自动清理旧的 `workspace-doc-browser` 安装，避免 VS Code 出现重复右键入口
