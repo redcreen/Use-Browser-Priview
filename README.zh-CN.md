@@ -29,6 +29,7 @@ bash install.sh
 - `.htm` / `.html` 按 HTML 页面方式预览
 - 浏览器里的目录浏览
 - 目录里如果有 `README.md`，默认先打开这个 README
+- 浏览器前进 / 后退时，尽量恢复之前的页面位置
 - 图片、视频、文本预览
 - 同一 workspace 尽量复用同一个本地端口
 - 同一个项目根在 Finder 和 VS Code / Codex 之间尽量复用同一个本地预览端口
@@ -183,6 +184,8 @@ bash adapters/codex-app/uninstall-codex-app.sh
 本地 `.htm` / `.html` 文件进入预览后会按 HTML 页面渲染，不再退回成纯文本查看。
 
 如果目标是目录，并且该目录里有 `README.md`，预览会先打开这个 README；没有时才保持目录列表页。
+
+同一个预览标签页里使用浏览器前进 / 后退时，会恢复这个页面之前记住的滚动位置，而不是总回到顶部。
 
 ### 在 Finder 里
 

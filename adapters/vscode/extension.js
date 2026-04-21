@@ -1726,6 +1726,9 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     let mermaidLoadPromise = null;
     const openFolders = new Set();
     const sidebarStateKey = "workspace-doc-browser.sidebar:" + workspaceName;
+    const scrollStateKeyPrefix = "workspace-doc-browser.scroll:" + workspaceName + ":";
+    let scrollEntryId = "";
+    let scrollSaveFrame = 0;
 
     function escapeHtml(value) {
       return String(value || "")
@@ -2238,6 +2241,109 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       }
     }
 
+    function ensureHistoryEntryId() {
+      if (scrollEntryId) {
+        return scrollEntryId;
+      }
+      const currentState = window.history.state && typeof window.history.state === "object"
+        ? window.history.state
+        : {};
+      if (currentState.workspaceDocBrowserEntryId) {
+        scrollEntryId = String(currentState.workspaceDocBrowserEntryId);
+        return scrollEntryId;
+      }
+      scrollEntryId = "entry-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+      try {
+        window.history.replaceState({ ...currentState, workspaceDocBrowserEntryId: scrollEntryId }, "", window.location.href);
+      } catch {}
+      return scrollEntryId;
+    }
+
+    function getScrollStateStorage() {
+      try {
+        return window.sessionStorage;
+      } catch {
+        return null;
+      }
+    }
+
+    function getScrollStateKey() {
+      return scrollStateKeyPrefix + ensureHistoryEntryId();
+    }
+
+    function persistScrollPosition() {
+      const storage = getScrollStateStorage();
+      if (!storage) {
+        return;
+      }
+      try {
+        storage.setItem(getScrollStateKey(), JSON.stringify({
+          x: window.scrollX || window.pageXOffset || 0,
+          y: window.scrollY || window.pageYOffset || 0,
+          path: window.location.pathname + window.location.search + window.location.hash,
+        }));
+      } catch {}
+    }
+
+    function scheduleScrollPositionSave() {
+      if (scrollSaveFrame) {
+        return;
+      }
+      scrollSaveFrame = window.requestAnimationFrame(() => {
+        scrollSaveFrame = 0;
+        persistScrollPosition();
+      });
+    }
+
+    function loadSavedScrollPosition() {
+      const storage = getScrollStateStorage();
+      if (!storage) {
+        return null;
+      }
+      try {
+        const raw = storage.getItem(getScrollStateKey());
+        if (!raw) {
+          return null;
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Number.isFinite(parsed.x) || !Number.isFinite(parsed.y)) {
+          return null;
+        }
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+
+    function restoreSavedScrollPosition(attempts = 1) {
+      const saved = loadSavedScrollPosition();
+      if (!saved) {
+        return false;
+      }
+      let remaining = Math.max(1, Number(attempts) || 1);
+      const apply = () => {
+        window.scrollTo(saved.x, saved.y);
+        remaining -= 1;
+        if (remaining > 0) {
+          window.requestAnimationFrame(apply);
+        }
+      };
+      apply();
+      return true;
+    }
+
+    function scrollToCurrentHashTarget() {
+      if (!window.location.hash) {
+        return false;
+      }
+      const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+      if (!target) {
+        return false;
+      }
+      target.scrollIntoView();
+      return true;
+    }
+
     function captureOpenFolders() {
       openFolders.clear();
       document.querySelectorAll("details[data-path]").forEach((details) => {
@@ -2293,6 +2399,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (lastMarkdown !== directorySignature) {
           lastMarkdown = directorySignature;
           content.innerHTML = renderDirectoryFrame(findDirectoryChildren(lastTreeData, relativePath));
+          restoreSavedScrollPosition(3);
         }
         return;
       }
@@ -2300,6 +2407,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (lastMarkdown !== "__image__") {
           lastMarkdown = "__image__";
           content.innerHTML = renderImageFrame();
+          restoreSavedScrollPosition(3);
         }
         return;
       }
@@ -2307,6 +2415,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (lastMarkdown !== "__video__") {
           lastMarkdown = "__video__";
           content.innerHTML = renderVideoFrame();
+          restoreSavedScrollPosition(3);
         }
         return;
       }
@@ -2314,6 +2423,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (lastMarkdown !== "__html__") {
           lastMarkdown = "__html__";
           content.innerHTML = renderHtmlFrame();
+          restoreSavedScrollPosition(3);
         }
         return;
       }
@@ -2321,6 +2431,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (lastMarkdown !== "__binary__") {
           lastMarkdown = "__binary__";
           content.innerHTML = renderBinaryFrame();
+          restoreSavedScrollPosition(3);
         }
         return;
       }
@@ -2334,15 +2445,14 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (fileKind === "markdown") {
           content.innerHTML = renderContentFrame(renderMarkdown(text));
           await renderMermaidDiagrams();
-          if (window.location.hash) {
-            const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
-            if (target) {
-              target.scrollIntoView();
-            }
+          const restored = restoreSavedScrollPosition(5);
+          if (!restored) {
+            scrollToCurrentHashTarget();
           }
           return;
         }
         content.innerHTML = renderTextFrame(text);
+        restoreSavedScrollPosition(3);
       }
     }
 
@@ -2361,6 +2471,20 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     }
 
     document.title = relativePath ? relativePath + " - " + workspaceName : workspaceName;
+    ensureHistoryEntryId();
+    try {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+    } catch {}
+    window.addEventListener("scroll", scheduleScrollPositionSave, { passive: true });
+    window.addEventListener("pagehide", persistScrollPosition);
+    window.addEventListener("beforeunload", persistScrollPosition);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        persistScrollPosition();
+      }
+    });
     if (sidebarToggle) {
       sidebarToggle.addEventListener("click", () => {
         setSidebarCollapsed(!document.body.classList.contains("sidebar-collapsed"));

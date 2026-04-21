@@ -29,6 +29,7 @@ bash install.sh
 - rendered HTML page preview for `.htm` / `.html`
 - directory browsing in the browser
 - if a directory contains `README.md`, preview opens that README first
+- browser back / forward restores the previous page position
 - image, video, and text preview
 - local session reuse so the same workspace tends to keep the same port
 - the same project root reuses one local preview port across Finder and VS Code / Codex when possible
@@ -183,6 +184,8 @@ The VS Code surface is right-click only. There is no status-bar button and no co
 Local `.htm` / `.html` files opened through the preview stay rendered as HTML pages instead of falling back to plain text.
 
 If the target is a directory and that directory contains `README.md`, preview opens that README first. The directory listing remains the fallback when no README is present.
+
+Back / forward inside the same preview tab restores the previously remembered scroll position instead of always jumping back to the top.
 
 ### In Finder
 

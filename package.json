@@ -14,10 +14,11 @@
     "test:directory-readme-default": "node tests/validate-directory-readme-default.mjs",
     "test:finder-shared-session-reuse": "node tests/validate-finder-shared-session-reuse.mjs",
     "test:html-preview-contract": "node tests/validate-html-preview-contract.mjs",
+    "test:scroll-restoration-contract": "node tests/validate-scroll-restoration-contract.mjs",
     "test:shared-session-store": "node tests/validate-shared-session-store.mjs",
     "test:vscode-adapter-contract": "node tests/validate-vscode-adapter.mjs",
     "test:install-flows": "node tests/validate-install-flows.mjs",
     "test:codex-app-patch": "node tests/validate-codex-app-patch.mjs",
-    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch"
+    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:scroll-restoration-contract && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch"
   }
 }
