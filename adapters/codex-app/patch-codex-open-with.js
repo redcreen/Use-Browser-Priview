@@ -92,21 +92,23 @@ function patchMainBundleSource(source, runtimeScriptPath) {
     return source;
   }
 
-  const registryPattern = /((?:var\s+)|,)Gc=\[([\s\S]*?)\],Kc=e\.mr\(`open-in-targets`\);/;
-  if (!registryPattern.test(source)) {
+  const registryPattern = /((?:var\s+)|,)([A-Za-z_$][\w$]*)=\[([\s\S]*?)\],([A-Za-z_$][\w$]*)=e\.([A-Za-z_$][\w$]*)\(`open-in-targets`\);/;
+  const registryMatch = source.match(registryPattern);
+  if (!registryMatch) {
     throw new Error("Unable to locate Codex open-target registry in the main bundle.");
   }
 
+  const targetsVarName = registryMatch[2];
   const runtimeLiteral = JSON.stringify(runtimeScriptPath);
   const patchPrelude = [
     `useBrowserPriviewCodexPatchMarker=${JSON.stringify(PATCH_MARKER)}`,
-    `${TARGET_VAR_NAME}=$o({id:\`${TARGET_ID}\`,label:\`${TARGET_LABEL}\`,icon:null,kind:\`editor\`,darwin:{detect:()=>((0,a.existsSync)(${runtimeLiteral})?\`/bin/bash\`:null),open:async({command:e,path:t})=>{await Oo(e,[${runtimeLiteral},t])}}})`,
-    "Gc=[",
+    `${TARGET_VAR_NAME}={id:\`${TARGET_ID}\`,platforms:{darwin:{label:\`${TARGET_LABEL}\`,icon:null,kind:\`editor\`,detect:()=>require(\`fs\`).existsSync(${runtimeLiteral})?\`/bin/bash\`:null,open:async({path:t})=>{await new Promise((resolve,reject)=>require(\`child_process\`).execFile(\`/bin/bash\`,[${runtimeLiteral},t],error=>error?reject(error):resolve()))}}}}`,
+    `${targetsVarName}=[`,
   ].join(",");
 
-  return source.replace(registryPattern, (_match, prefix, existingTargets) => {
+  return source.replace(registryPattern, (_match, prefix, _targetsVar, existingTargets, loggerVarName, loggerFactoryName) => {
     const declarationPrefix = prefix === "," ? "," : "var ";
-    return `${declarationPrefix}${patchPrelude}${existingTargets},${TARGET_VAR_NAME}],Kc=e.mr(\`open-in-targets\`);`;
+    return `${declarationPrefix}${patchPrelude}${existingTargets},${TARGET_VAR_NAME}],${loggerVarName}=e.${loggerFactoryName}(\`open-in-targets\`);`;
   });
 }
 
