@@ -1,0 +1,51 @@
+{
+  "name": "use-browser-priview",
+  "displayName": "Use Browser Priview",
+  "description": "Open local folders and Markdown in a browser preview from Codex / VS Code.",
+  "version": "0.0.1",
+  "publisher": "redcreen",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:redcreen.useBrowserPriview.open"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "redcreen.useBrowserPriview.open",
+        "title": "Use Browser Preview",
+        "category": "Browser Preview",
+        "icon": "$(globe)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "redcreen.useBrowserPriview.open",
+          "when": "editorLangId == markdown",
+          "group": "navigation@9"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "redcreen.useBrowserPriview.open",
+          "when": "resourceExtname == .md",
+          "group": "navigation@9"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "redcreen.useBrowserPriview.open",
+          "when": "resourceExtname == .md || editorLangId == markdown",
+          "group": "navigation@9"
+        }
+      ]
+    }
+  }
+}

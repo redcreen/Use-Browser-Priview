@@ -1,0 +1,10 @@
+{
+  "name": "use-browser-priview",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Standalone browser preview project for Finder and editor context menus.",
+  "scripts": {
+    "install:local": "bash install.sh",
+    "check:vscode-adapter": "node --check adapters/vscode/extension.js && node --check adapters/vscode/open-finder-preview.js && bash -n adapters/vscode/open-finder-preview.sh && bash -n adapters/vscode/install-macos-finder-quick-action.sh"
+  }
+}
