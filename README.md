@@ -22,12 +22,44 @@ Use Browser Priview opens local folders and Markdown files in your browser with 
 
 ## Install
 
+### VS Code / Codex One-Line Install
+
+Recommended if you only want the editor right-click entry and want a single command you can paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode
+```
+
+After install, run this once in VS Code / Codex:
+
+```text
+Developer: Restart Extension Host
+```
+
+### Install In The VS Code Extensions UI
+
+If you want to install from the Extensions view instead of Terminal:
+
+1. Prepare a `.vsix` package for this extension.
+2. Open the Extensions view in VS Code.
+3. Click `...` in the top-right corner.
+4. Choose `Install from VSIX...`.
+5. Pick the `.vsix` file and then run `Developer: Restart Extension Host`.
+
+The extension is not published to the public VS Code Marketplace yet, so the current supported UI path is `Install from VSIX...`, not search-and-install by name.
+
 ### Install Everything
 
 Terminal:
 
 ```bash
 bash install.sh
+```
+
+or directly from GitHub:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash
 ```
 
 Finder:
@@ -53,15 +85,15 @@ or
 npm run install:vscode
 ```
 
+or directly from GitHub:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode
+```
+
 Finder:
 
 - double-click [install-vscode.command](install-vscode.command)
-
-After install, run this once in VS Code / Codex:
-
-```text
-Developer: Restart Extension Host
-```
 
 ### Install Finder Only
 
@@ -113,6 +145,7 @@ Run the same install command again:
 - everything: `bash install.sh`
 - VS Code only: `bash install.sh --vscode`
 - Finder only: `bash install.sh --finder`
+- remote VS Code only: `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode`
 
 ## Troubleshooting
 

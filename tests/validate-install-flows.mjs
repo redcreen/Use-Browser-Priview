@@ -42,6 +42,25 @@ function runInstall(args, sandbox) {
   });
 }
 
+function runRemoteInstall(args, sandbox, archivePath) {
+  return execFileSync(
+    "bash",
+    [
+      "-lc",
+      `cat ${JSON.stringify(path.join(repoRoot, "install.sh"))} | bash -s -- ${args.join(" ")}`.trim(),
+    ],
+    {
+      cwd: sandbox.tempRoot,
+      env: {
+        ...buildEnv(sandbox),
+        USE_BROWSER_PRIVIEW_ARCHIVE_SOURCE: archivePath,
+      },
+      encoding: "utf8",
+      stdio: "pipe",
+    },
+  );
+}
+
 function expectedExtensionDir(sandbox) {
   return path.join(
     sandbox.extensionsDir,
@@ -51,6 +70,28 @@ function expectedExtensionDir(sandbox) {
 
 function expectedFinderRuntimeDir(sandbox) {
   return path.join(sandbox.supportDir, "finder-runtime");
+}
+
+function createSourceArchive(sandbox) {
+  const archivePath = path.join(sandbox.tempRoot, "use-browser-priview-source.tar.gz");
+  execFileSync(
+    "tar",
+    [
+      "-czf",
+      archivePath,
+      "--exclude=.git",
+      "--exclude=node_modules",
+      "--exclude=*.tar.gz",
+      "-C",
+      repoRoot,
+      ".",
+    ],
+    {
+      cwd: repoRoot,
+      stdio: "pipe",
+    },
+  );
+  return archivePath;
 }
 
 function seedLegacyExtension(sandbox) {
@@ -146,9 +187,25 @@ function testAllInstall() {
   }
 }
 
+function testRemoteVscodeOnlyInstall() {
+  const sandbox = createSandbox();
+  const archivePath = createSourceArchive(sandbox);
+  try {
+    const output = runRemoteInstall(["--vscode"], sandbox, archivePath);
+    assert(output.includes("Installed VS Code / Codex adapter"), "Expected remote VS Code install output.");
+    assert(output.includes("Restart Extension Host"), "Expected remote VS Code install to remind users to restart the extension host.");
+    assertExtensionInstalled(sandbox);
+    assertMissing(sandbox.workflowDir, "Remote VS Code-only install should not create a Finder workflow.");
+    assertMissing(expectedFinderRuntimeDir(sandbox), "Remote VS Code-only install should not create Finder runtime files.");
+  } finally {
+    fs.rmSync(sandbox.tempRoot, { recursive: true, force: true });
+  }
+}
+
 testHelp();
 testVscodeOnly();
 testFinderOnly();
 testAllInstall();
+testRemoteVscodeOnlyInstall();
 
 console.log("validate-install-flows: ok");

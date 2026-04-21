@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-ADAPTER_DIR="$REPO_ROOT/adapters/vscode"
+DEFAULT_ARCHIVE_SOURCE="https://codeload.github.com/redcreen/Use-Browser-Priview/tar.gz/refs/heads/master"
+REPO_ROOT=""
+ADAPTER_DIR=""
 EXTENSIONS_DIR="${USE_BROWSER_PRIVIEW_VSCODE_EXTENSIONS_DIR:-$HOME/.vscode/extensions}"
 SUPPORT_DIR="${USE_BROWSER_PRIVIEW_SUPPORT_DIR:-$HOME/Library/Application Support/Use Browser Priview}"
 FINDER_RUNTIME_DIR="${USE_BROWSER_PRIVIEW_FINDER_RUNTIME_DIR:-$SUPPORT_DIR/finder-runtime}"
+BOOTSTRAP_TEMP_DIR=""
 
 usage() {
   cat <<'EOF'
@@ -17,11 +19,69 @@ Usage:
   bash install.sh --finder
   bash install.sh --help
 
+Remote:
+  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode
+
 Modes:
   --all      Install both the VS Code adapter and Finder Quick Action
   --vscode   Install only the VS Code / Codex adapter
   --finder   Install only the Finder Quick Action
 EOF
+}
+
+cleanup() {
+  if [ -n "$BOOTSTRAP_TEMP_DIR" ] && [ -d "$BOOTSTRAP_TEMP_DIR" ]; then
+    rm -rf "$BOOTSTRAP_TEMP_DIR"
+  fi
+}
+
+trap cleanup EXIT
+
+resolve_repo_root() {
+  if [ -n "${BASH_SOURCE[0]:-}" ]; then
+    cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
+    return
+  fi
+  pwd
+}
+
+bootstrap_repo() {
+  local archive_source="${USE_BROWSER_PRIVIEW_ARCHIVE_SOURCE:-$DEFAULT_ARCHIVE_SOURCE}"
+  local archive_path=""
+  local extract_dir=""
+  local extracted_root=""
+
+  if [ -z "$archive_source" ]; then
+    echo "Missing install archive source." >&2
+    exit 1
+  fi
+
+  BOOTSTRAP_TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/use-browser-priview-install-XXXXXX")"
+  archive_path="$BOOTSTRAP_TEMP_DIR/source.tar.gz"
+  extract_dir="$BOOTSTRAP_TEMP_DIR/extracted"
+  mkdir -p "$extract_dir"
+
+  if [ -f "$archive_source" ]; then
+    cp "$archive_source" "$archive_path"
+  else
+    curl -fsSL "$archive_source" -o "$archive_path"
+  fi
+
+  tar -xzf "$archive_path" -C "$extract_dir"
+
+  if [ -f "$extract_dir/adapters/vscode/package.json" ]; then
+    extracted_root="$extract_dir"
+  else
+    extracted_root="$(find "$extract_dir" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  fi
+
+  if [ -z "$extracted_root" ] || [ ! -f "$extracted_root/adapters/vscode/package.json" ]; then
+    echo "Downloaded install source does not contain adapters/vscode/package.json." >&2
+    exit 1
+  fi
+
+  REPO_ROOT="$extracted_root"
 }
 
 read_package_field() {
@@ -36,11 +96,6 @@ payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 print(payload[sys.argv[2]])
 PY
 }
-
-if [ ! -f "$ADAPTER_DIR/package.json" ]; then
-  echo "Missing VS Code adapter package: $ADAPTER_DIR/package.json" >&2
-  exit 1
-fi
 
 MODE="all"
 if [ "${1:-}" != "" ]; then
@@ -65,6 +120,17 @@ if [ "${1:-}" != "" ]; then
       ;;
   esac
   shift
+fi
+
+REPO_ROOT="$(resolve_repo_root)"
+if [ ! -f "$REPO_ROOT/adapters/vscode/package.json" ]; then
+  bootstrap_repo
+fi
+ADAPTER_DIR="$REPO_ROOT/adapters/vscode"
+
+if [ ! -f "$ADAPTER_DIR/package.json" ]; then
+  echo "Missing VS Code adapter package: $ADAPTER_DIR/package.json" >&2
+  exit 1
 fi
 
 if [ "$#" -ne 0 ]; then

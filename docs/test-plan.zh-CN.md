@@ -17,6 +17,7 @@
 | Finder 文件夹预览 | 已安装 Finder Quick Action | 对文件夹项右键执行 `Use Browser Priview` | 浏览器打开的是当前选中文件夹，而不是别的仓库根目录 |
 | Codex / VS Code Markdown 预览 | 已安装编辑器 adapter，且已打开本地 Markdown | 在编辑器里右键执行 `Use Browser Priview` | 浏览器打开当前 Markdown 的预览页 |
 | 只装 VS Code | 当前没有 adapter 或存在旧 `workspace-doc-browser` 副本 | 执行 `bash install.sh --vscode`，重启扩展宿主后在 VS Code 里对 Markdown 右键 | 新 adapter 安装成功，旧 `workspace-doc-browser` 副本被清理，且只剩一个 `Use Browser Priview` 右键入口 |
+| VS Code 远程一条命令安装 | 机器可以通过 curl 访问公开仓库 | 执行 `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`，重启扩展宿主后在 VS Code 里对 Markdown 右键 | 不需要先 clone 仓库也能完成安装，并且 VS Code 右键入口可用 |
 | 只装 Finder | macOS，尚未安装 Finder 路径 | 执行 `bash install.sh --finder`，然后在 Finder 里对文件夹项右键 | Finder Quick Action 出现且可用，不依赖 VS Code 扩展安装 |
 | 全量安装 | macOS，干净环境或历史安装环境 | 执行 `bash install.sh` | VS Code 和 Finder 两条入口一次安装完成 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
@@ -30,6 +31,7 @@
 
 - `npm test`
 - `bash install.sh --help`
+- 远程安装 smoke test：`cat install.sh | bash -s -- --vscode`，并配合 `USE_BROWSER_PRIVIEW_ARCHIVE_SOURCE=<archive>`
 - `node --check adapters/vscode/extension.js`
 - `node --check adapters/vscode/open-finder-preview.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
@@ -60,6 +62,7 @@
 
 - Finder Quick Action 在 macOS 上安装成功
 - Codex / VS Code adapter 能通过 `bash install.sh --vscode` 装上，并清掉旧的 `workspace-doc-browser` 副本
+- Codex / VS Code adapter 也能通过远程一条命令安装，不依赖本地先 clone 仓库
 - Finder Quick Action 能通过 `bash install.sh --finder` 装上，且不依赖 VS Code 扩展安装
 - `bash install.sh` 能一次安装两条入口
 - Finder 和 VS Code / Codex 对同一个项目根会复用同一个端口
