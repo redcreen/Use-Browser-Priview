@@ -56,6 +56,7 @@ Stage-1 standalone baseline.
 
 - standalone repo created
 - first runnable adapter code moved into the repo
+- Codex app patch playbook captured in [.codex/codex-app-patch-playbook.md](codex-app-patch-playbook.md)
 
 ## In Progress
 
