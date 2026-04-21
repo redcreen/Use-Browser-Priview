@@ -512,20 +512,23 @@ function getFileKind(filePath) {
   if (/\.md$/i.test(lowerPath)) {
     return "markdown";
   }
+  if (/\.(html?|xhtml)$/i.test(lowerPath)) {
+    return "html";
+  }
   if (/\.(png|apng|jpe?g|gif|webp|svg|bmp|ico|avif|tiff?)$/i.test(lowerPath)) {
     return "image";
   }
   if (/\.(mp4|webm|mov|m4v|ogg|ogv)$/i.test(lowerPath)) {
     return "video";
   }
-  if (/\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|html|css|csv|env)$/i.test(lowerPath) || /(^|\/)(\.gitignore|dockerfile)$/i.test(lowerPath)) {
+  if (/\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|css|csv|env)$/i.test(lowerPath) || /(^|\/)(\.gitignore|dockerfile)$/i.test(lowerPath)) {
     return "text";
   }
   return "file";
 }
 
 function isPreviewableKind(kind) {
-  return kind === "directory" || kind === "markdown" || kind === "image" || kind === "video" || kind === "text";
+  return kind === "directory" || kind === "markdown" || kind === "html" || kind === "image" || kind === "video" || kind === "text";
 }
 
 function encodePathSegments(value) {
@@ -717,13 +720,16 @@ function getFileKind(filePath) {
   if (/\\.md$/i.test(lowerPath)) {
     return "markdown";
   }
+  if (/\\.(html?|xhtml)$/i.test(lowerPath)) {
+    return "html";
+  }
   if (/\\.(png|apng|jpe?g|gif|webp|svg|bmp|ico|avif|tiff?)$/i.test(lowerPath)) {
     return "image";
   }
   if (/\\.(mp4|webm|mov|m4v|ogg|ogv)$/i.test(lowerPath)) {
     return "video";
   }
-  if (/\\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|html|css|csv|env)$/i.test(lowerPath) || /(^|\\/)(\\.gitignore|dockerfile)$/i.test(lowerPath)) {
+  if (/\\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|css|csv|env)$/i.test(lowerPath) || /(^|\\/)(\\.gitignore|dockerfile)$/i.test(lowerPath)) {
     return "text";
   }
   return "file";
@@ -1010,7 +1016,7 @@ http.createServer((req, res) => {
 
   if (!rawRelativePath) {
     const kind = entryInfo.kind;
-    if (kind === "markdown" || kind === "image" || kind === "video" || kind === "text") {
+    if (kind === "markdown" || kind === "html" || kind === "image" || kind === "video" || kind === "text") {
       return sendPreviewPage(res, relativePath, kind);
     }
   }
@@ -1442,6 +1448,20 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       border-radius: 10px;
       background: #000000;
     }
+    .asset-html-stage {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .asset-html-stage iframe {
+      display: block;
+      width: 100%;
+      min-height: min(78vh, 980px);
+      border: 0;
+      background: #ffffff;
+    }
     .asset-actions {
       display: flex;
       flex-wrap: wrap;
@@ -1636,13 +1656,16 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       if (/\\.md$/i.test(lowerPath)) {
         return "markdown";
       }
+      if (/\\.(html?|xhtml)$/i.test(lowerPath)) {
+        return "html";
+      }
       if (/\\.(png|apng|jpe?g|gif|webp|svg|bmp|ico|avif|tiff?)$/i.test(lowerPath)) {
         return "image";
       }
       if (/\\.(mp4|webm|mov|m4v|ogg|ogv)$/i.test(lowerPath)) {
         return "video";
       }
-      if (/\\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|html|css|csv|env)$/i.test(lowerPath) || /(^|\\/)(\\.gitignore|dockerfile)$/i.test(lowerPath)) {
+      if (/\\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|css|csv|env)$/i.test(lowerPath) || /(^|\\/)(\\.gitignore|dockerfile)$/i.test(lowerPath)) {
         return "text";
       }
       return "file";
@@ -1722,11 +1745,11 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       if (treeEntry && treeEntry.kind === "directory") {
         return previewHref(resolvedPath, "directory", hashPart);
       }
-      if (treeEntry && (treeEntry.kind === "markdown" || treeEntry.kind === "image" || treeEntry.kind === "video" || treeEntry.kind === "text")) {
+      if (treeEntry && (treeEntry.kind === "markdown" || treeEntry.kind === "html" || treeEntry.kind === "image" || treeEntry.kind === "video" || treeEntry.kind === "text")) {
         return previewHref(resolvedPath, treeEntry.kind, hashPart);
       }
       const kind = fileKindForPath(resolvedPath);
-      if (kind === "markdown" || kind === "image" || kind === "video" || kind === "text") {
+      if (kind === "markdown" || kind === "html" || kind === "image" || kind === "video" || kind === "text") {
         return previewHref(resolvedPath, kind, hashPart);
       }
       return rawFileHref(resolvedPath, hashPart);
@@ -2023,6 +2046,11 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return '<div class="content-shell"><div class="file-meta">' + renderFileMeta() + '</div><div class="asset-body video-file-body"><div class="asset-video-stage"><video controls preload="metadata" src="' + escapeHtml(videoSrc) + '"></video></div><div class="asset-actions"><a class="asset-button" href="' + escapeHtml(rawHref) + '" target="_blank" rel="noreferrer">Open Raw Video</a></div></div></div>';
     }
 
+    function renderHtmlFrame() {
+      const rawHref = rawFileHref(relativePath, "", Date.now().toString());
+      return '<div class="content-shell"><div class="file-meta">' + renderFileMeta() + '</div><div class="asset-body html-file-body"><div class="asset-html-stage"><iframe src="' + escapeHtml(rawHref) + '" loading="eager" referrerpolicy="no-referrer"></iframe></div><div class="asset-actions"><a class="asset-button" href="' + escapeHtml(rawHref) + '" target="_blank" rel="noreferrer">Open Raw HTML</a></div></div></div>';
+    }
+
     function renderBinaryFrame() {
       const rawHref = rawFileHref(relativePath);
       return '<div class="content-shell"><div class="file-meta">' + renderFileMeta() + '</div><div class="markdown-body"><p class="empty-state">This file type is not rendered inline yet.</p><p><a class="asset-button" href="' + escapeHtml(rawHref) + '" target="_blank" rel="noreferrer">Open Raw File</a></p></div></div>';
@@ -2072,7 +2100,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     function renderDirectoryCard(item) {
       const resourcePath = item.kind === "directory" ? (item.path || "") : (item.sourcePath || "");
       let href = rawFileHref(resourcePath);
-      if (item.kind === "directory" || item.kind === "markdown" || item.kind === "image" || item.kind === "video" || item.kind === "text") {
+      if (item.kind === "directory" || item.kind === "markdown" || item.kind === "html" || item.kind === "image" || item.kind === "video" || item.kind === "text") {
         href = previewHref(resourcePath, item.kind);
       }
       let thumb = '<div class="directory-card-thumb">📄</div>';
@@ -2082,6 +2110,8 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         thumb = '<div class="directory-card-thumb"><img alt="" loading="lazy" src="' + escapeHtml(rawFileHref(resourcePath, "", resourcePath)) + '"></div>';
       } else if (item.kind === "video") {
         thumb = '<div class="directory-card-thumb">🎬</div>';
+      } else if (item.kind === "html") {
+        thumb = '<div class="directory-card-thumb">🌐</div>';
       } else if (item.kind === "markdown") {
         thumb = '<div class="directory-card-thumb">📝</div>';
       } else if (item.kind === "text") {
@@ -2135,7 +2165,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         }
         const active = currentResourceKind !== "directory" && item.sourcePath === relativePath ? " active" : "";
         let href = rawFileHref(item.sourcePath || "");
-        if (item.kind === "markdown" || item.kind === "image" || item.kind === "video" || item.kind === "text") {
+        if (item.kind === "markdown" || item.kind === "html" || item.kind === "image" || item.kind === "video" || item.kind === "text") {
           href = previewHref(item.sourcePath || "", item.kind);
         }
         const labelHtml = item.kind === "image"
@@ -2187,6 +2217,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (lastMarkdown !== "__video__") {
           lastMarkdown = "__video__";
           content.innerHTML = renderVideoFrame();
+        }
+        return;
+      }
+      if (fileKind === "html") {
+        if (lastMarkdown !== "__html__") {
+          lastMarkdown = "__html__";
+          content.innerHTML = renderHtmlFrame();
         }
         return;
       }

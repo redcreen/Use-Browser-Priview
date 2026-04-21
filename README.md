@@ -26,6 +26,7 @@ bash install.sh
 - VS Code / Codex Markdown right-click: `Use Browser Priview`
 - optional Codex app link right-click: `Open With` -> `Use Browser Priview`
 - rendered Markdown preview
+- rendered HTML page preview for `.htm` / `.html`
 - directory browsing in the browser
 - image, video, and text preview
 - local session reuse so the same workspace tends to keep the same port
@@ -177,6 +178,8 @@ bash adapters/codex-app/uninstall-codex-app.sh
 3. Choose `Use Browser Priview`.
 
 The VS Code surface is right-click only. There is no status-bar button and no command-palette shortcut.
+
+Local `.htm` / `.html` files opened through the preview stay rendered as HTML pages instead of falling back to plain text.
 
 ### In Finder
 

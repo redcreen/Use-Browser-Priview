@@ -24,6 +24,7 @@ This project is risky in three places:
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Markdown cross-link | browser already opened on a Markdown file | Click a relative Markdown link | Target Markdown opens as rendered preview, not a raw download |
+| HTML page preview | browser opened on an `.htm` or `.html` file | Open the file through the preview flow | The file renders as an HTML page instead of plain text |
 | Image preview | browser opened inside a folder containing images | Click an image file | Image preview opens inside the browser UI |
 | Video preview | browser opened inside a folder containing videos | Click a video file | Video player opens and supports playback / seeking |
 | Port reuse | same workspace opened twice | Trigger the preview twice from Finder or editor | Existing session is reused when the code stamp still matches |
@@ -46,6 +47,7 @@ This project is risky in three places:
 - `bash -n install-finder.command`
 - `bash -n install-codex-app.command`
 - local preview smoke test via `WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
+- HTML preview contract via `node tests/validate-html-preview-contract.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 - Codex desktop patch contract via `node tests/validate-codex-app-patch.mjs`
 

@@ -12,10 +12,11 @@
     "check:codex-app": "node --check adapters/codex-app/patch-codex-open-with.js && bash -n adapters/codex-app/open-codex-preview.sh && bash -n adapters/codex-app/install-codex-app.sh && bash -n adapters/codex-app/uninstall-codex-app.sh",
     "check:installers": "bash -n install.sh && bash -n install.command && bash -n install-vscode.command && bash -n install-finder.command && bash -n install-codex-app.command",
     "test:finder-shared-session-reuse": "node tests/validate-finder-shared-session-reuse.mjs",
+    "test:html-preview-contract": "node tests/validate-html-preview-contract.mjs",
     "test:shared-session-store": "node tests/validate-shared-session-store.mjs",
     "test:vscode-adapter-contract": "node tests/validate-vscode-adapter.mjs",
     "test:install-flows": "node tests/validate-install-flows.mjs",
     "test:codex-app-patch": "node tests/validate-codex-app-patch.mjs",
-    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch"
+    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch"
   }
 }

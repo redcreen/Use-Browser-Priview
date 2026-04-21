@@ -25,6 +25,7 @@
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | Markdown 相对链接 | 浏览器已经打开 Markdown | 点击相对 Markdown 链接 | 目标 Markdown 继续以渲染页打开，不变成 raw 下载 |
+| HTML 页面预览 | 浏览器打开 `.htm` 或 `.html` 文件 | 通过预览流打开该文件 | 该文件按 HTML 页面渲染，而不是纯文本 |
 | 图片预览 | 当前目录包含图片 | 点击图片文件 | 在浏览器内打开图片预览 |
 | 视频预览 | 当前目录包含视频 | 点击视频文件 | 在浏览器内打开播放器，并支持拖动播放 |
 | 端口复用 | 同一 workspace 被重复打开 | 从 Finder 或编辑器重复触发两次 | 代码版本不变时优先复用已有 session 和端口 |
@@ -47,6 +48,7 @@
 - `bash -n install-finder.command`
 - `bash -n install-codex-app.command`
 - 本地 smoke test：`WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
+- HTML 预览约束：`node tests/validate-html-preview-contract.mjs`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`
 - Codex 桌面 patch 约束：`node tests/validate-codex-app-patch.mjs`
 

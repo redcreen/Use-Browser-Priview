@@ -90,20 +90,23 @@ function getFileKind(filePath) {
   if (/\.md$/i.test(lowerPath)) {
     return "markdown";
   }
+  if (/\.(html?|xhtml)$/i.test(lowerPath)) {
+    return "html";
+  }
   if (/\.(png|apng|jpe?g|gif|webp|svg|bmp|ico|avif|tiff?)$/i.test(lowerPath)) {
     return "image";
   }
   if (/\.(mp4|webm|mov|m4v|ogg|ogv)$/i.test(lowerPath)) {
     return "video";
   }
-  if (/\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|html|css|csv|env)$/i.test(lowerPath) || /(^|\/)(\.gitignore|dockerfile)$/i.test(lowerPath)) {
+  if (/\.(txt|json|js|ts|py|sh|yml|yaml|toml|ini|cfg|conf|xml|css|csv|env)$/i.test(lowerPath) || /(^|\/)(\.gitignore|dockerfile)$/i.test(lowerPath)) {
     return "text";
   }
   return "file";
 }
 
 function isPreviewableKind(kind) {
-  return kind === "directory" || kind === "markdown" || kind === "image" || kind === "video" || kind === "text";
+  return kind === "directory" || kind === "markdown" || kind === "html" || kind === "image" || kind === "video" || kind === "text";
 }
 
 function encodePathSegments(value) {

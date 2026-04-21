@@ -26,6 +26,7 @@ bash install.sh
 - VS Code / Codex 的 Markdown 右键：`Use Browser Priview`
 - 可选的 Codex app 链接右键：`Open With` -> `Use Browser Priview`
 - Markdown 渲染预览
+- `.htm` / `.html` 按 HTML 页面方式预览
 - 浏览器里的目录浏览
 - 图片、视频、文本预览
 - 同一 workspace 尽量复用同一个本地端口
@@ -177,6 +178,8 @@ bash adapters/codex-app/uninstall-codex-app.sh
 3. 选择 `Use Browser Priview`。
 
 当前 VS Code 侧只保留右键入口，没有状态栏按钮，也没有命令面板快捷入口。
+
+本地 `.htm` / `.html` 文件进入预览后会按 HTML 页面渲染，不再退回成纯文本查看。
 
 ### 在 Finder 里
 
