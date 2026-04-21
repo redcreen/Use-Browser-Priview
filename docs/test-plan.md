@@ -15,7 +15,9 @@ This project is risky in three places:
 | --- | --- | --- | --- |
 | Folder preview from Finder | macOS, Finder Quick Action installed | Right-click a folder item and run `Use Browser Priview` | Browser opens the selected folder, not an unrelated repo root |
 | Markdown preview from Codex / VS Code | adapter installed, local Markdown file open | Right-click a Markdown editor and run `Use Browser Priview` | Browser opens the selected Markdown preview |
-| VS Code surface cleanup | legacy `workspace-doc-browser` copy present before install | Run `bash install.sh`, restart the extension host, then right-click Markdown in VS Code | Only one `Use Browser Priview` context action remains and no `Docs Live` status-bar entry appears |
+| VS Code only install | no current adapter or a legacy adapter copy present | Run `bash install.sh --vscode`, restart the extension host, then right-click Markdown in VS Code | The new adapter installs cleanly, legacy `workspace-doc-browser` copies are removed, and only one `Use Browser Priview` context action remains |
+| Finder only install | macOS, Finder path not installed yet | Run `bash install.sh --finder`, then right-click a folder item in Finder | Finder Quick Action appears and works without requiring a VS Code extension install |
+| Full install | macOS, clean machine or stale install | Run `bash install.sh` | VS Code and Finder entry points both install from one command |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Markdown cross-link | browser already opened on a Markdown file | Click a relative Markdown link | Target Markdown opens as rendered preview, not a raw download |
 | Image preview | browser opened inside a folder containing images | Click an image file | Image preview opens inside the browser UI |
@@ -25,10 +27,14 @@ This project is risky in three places:
 ## Automation Coverage
 
 - `npm test`
+- `bash install.sh --help`
 - `node --check adapters/vscode/extension.js`
 - `node --check adapters/vscode/open-finder-preview.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
 - `bash -n adapters/vscode/install-macos-finder-quick-action.sh`
+- `bash -n install.command`
+- `bash -n install-vscode.command`
+- `bash -n install-finder.command`
 - local preview smoke test via `WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
 
 ## Manual Checks
@@ -50,5 +56,7 @@ This project is risky in three places:
 ## Release Gate
 
 - Finder Quick Action install succeeds on macOS
-- Codex / VS Code adapter installs from `install.sh` and removes legacy `workspace-doc-browser` copies
+- Codex / VS Code adapter installs from `bash install.sh --vscode` and removes legacy `workspace-doc-browser` copies
+- Finder Quick Action installs from `bash install.sh --finder` without requiring a VS Code extension install
+- `bash install.sh` installs both surfaces together
 - core acceptance cases above pass on a fresh machine

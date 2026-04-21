@@ -2,96 +2,118 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-Use Browser Priview is a standalone browser-based file and Markdown preview toolchain for local folders. It is being carved out of the old editor-bound implementation so the same preview experience can be launched from:
+Use Browser Priview opens local folders and Markdown files in your browser with one consistent preview experience.
 
-- macOS Finder right-click on a folder
-- Codex / VS Code editor right-click on Markdown
-- future editor adapters that can contribute a context-menu command
+## What You Get
 
-## Outcome
+- Finder folder right-click: `Use Browser Priview`
+- VS Code / Codex Markdown right-click: `Use Browser Priview`
+- rendered Markdown preview
+- directory browsing in the browser
+- image, video, and text preview
+- local session reuse so the same workspace tends to keep the same port
 
-Build one reusable preview product instead of repeatedly hiding the logic inside one editor extension.
+## Requirements
 
-The target user action is simple:
-
-`Use Browser Priview`
-
-Wherever that action appears, it should open the selected folder or file in a browser and provide the same navigation, Markdown rendering, image/video preview, and directory browsing behavior.
-
-## Current Scope
-
-- standalone macOS install path
-- Finder Quick Action for folders
-- first editor adapter for Codex / VS Code
-- browser preview for directories, Markdown, text, images, and video
-- session reuse so the same workspace keeps reusing the same local port when possible
+- macOS
+- Node.js available locally
+- VS Code / Codex 1.100 or newer if you want the editor integration
 
 ## Install
 
-Run from the repo root:
+### Install Everything
+
+Terminal:
 
 ```bash
 bash install.sh
 ```
 
-What it installs now:
+Finder:
 
-- the first Codex / VS Code adapter into `~/.vscode/extensions`
-- the macOS Finder Quick Action `Use Browser Priview`
-- removes legacy `redcreen.workspace-doc-browser-*` installs so VS Code keeps a single `Use Browser Priview` entry
+- double-click [install.command](install.command)
 
-## Minimal Configuration
+This installs:
 
-Minimum local requirements:
+- the VS Code / Codex adapter
+- the Finder Quick Action
 
-- macOS for the Finder Quick Action path
-- Node.js available locally
-- Codex / VS Code 1.100 or newer for the first editor adapter
+### Install VS Code / Codex Only
 
-After install, restart the extension host once:
+Terminal:
+
+```bash
+bash install.sh --vscode
+```
+
+or
+
+```bash
+npm run install:vscode
+```
+
+Finder:
+
+- double-click [install-vscode.command](install-vscode.command)
+
+After install, run this once in VS Code / Codex:
 
 ```text
 Developer: Restart Extension Host
 ```
 
-## Quick Start
+### Install Finder Only
 
-1. Clone the repo locally.
-2. Run `bash install.sh`.
-3. In Codex / VS Code, run `Developer: Restart Extension Host`.
-4. Use either of these entry points:
-- Finder: right-click a folder item, then choose `Use Browser Priview`
-- Codex / VS Code: right-click a Markdown file, then choose `Use Browser Priview`
+Terminal:
 
-The current VS Code surface is intentionally right-click only. It does not keep a status-bar `Docs Live` button or a command-palette shortcut.
+```bash
+bash install.sh --finder
+```
 
-## Project Shape
+or
 
-- `adapters/vscode/`
-  First editor adapter. This is the current Codex / VS Code integration layer.
-- `install.sh`
-  Local installer for the adapter plus the macOS Finder Quick Action.
-- `docs/`
-  Public project docs.
-- `.codex/`
-  Live maintainer control surface.
+```bash
+npm run install:finder
+```
 
-## Documentation Map
+Finder:
+
+- double-click [install-finder.command](install-finder.command)
+
+## How To Use
+
+### In VS Code / Codex
+
+1. Open a local Markdown file.
+2. Right-click in the editor, Explorer, or file tab title.
+3. Choose `Use Browser Priview`.
+
+The VS Code surface is right-click only. There is no status-bar button and no command-palette shortcut.
+
+### In Finder
+
+1. Right-click a folder item.
+2. Choose `Use Browser Priview`.
+
+The stable Finder path is folder-item right-click. Blank-area Finder right-click is not supported by the current Quick Action mechanism.
+
+## Update
+
+Run the same install command again:
+
+- everything: `bash install.sh`
+- VS Code only: `bash install.sh --vscode`
+- Finder only: `bash install.sh --finder`
+
+## Troubleshooting
+
+- VS Code still shows the old menu: run `Developer: Restart Extension Host`
+- Finder entry does not appear: right-click a folder item, not blank space
+- Browser does not open: make sure Node.js is installed and available in `PATH`
+
+## Docs
 
 - [Docs Home](docs/README.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Test Plan](docs/test-plan.md)
-- [Development Plan](docs/reference/use-browser-priview/development-plan.md)
-
-## Current Architecture Direction
-
-This first standalone cut intentionally optimizes for extraction speed:
-
-- the preview runtime still lives inside the first VS Code adapter package
-- the Finder launcher reuses that runtime instead of inventing a second renderer
-- the next architecture milestone is to extract a shared runtime package so future editor adapters do not depend on the VS Code adapter layout
-
-## Status
-
-This repository is now the new product home for Use Browser Priview. The previous `project-assistant` integration is the source it was extracted from, not the long-term home.

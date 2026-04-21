@@ -3,11 +3,12 @@ set -euo pipefail
 
 EXTENSION_DIR="${1:-$(cd "$(dirname "$0")" && pwd)}"
 WORKFLOW_NAME="Use Browser Priview"
-WORKFLOW_DIR="$HOME/Library/Services/${WORKFLOW_NAME}.workflow"
+WORKFLOW_DIR="${USE_BROWSER_PRIVIEW_FINDER_WORKFLOW_DIR:-$HOME/Library/Services/${WORKFLOW_NAME}.workflow}"
 RESOURCES_DIR="$WORKFLOW_DIR/Contents/Resources"
 LAUNCHER_PATH="$EXTENSION_DIR/open-finder-preview.js"
 WRAPPER_PATH="$EXTENSION_DIR/open-finder-preview.sh"
 NODE_BIN="$(command -v node 2>/dev/null || true)"
+SKIP_SYSTEM_REFRESH="${USE_BROWSER_PRIVIEW_SKIP_SYSTEM_REFRESH:-0}"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   echo "Skipping Finder Quick Action install: macOS only"
@@ -203,10 +204,12 @@ chmod +x "$WRAPPER_PATH"
 plutil -lint "$WORKFLOW_DIR/Contents/Info.plist" >/dev/null
 plutil -lint "$RESOURCES_DIR/document.wflow" >/dev/null
 plutil -lint "$WORKFLOW_DIR/Contents/version.plist" >/dev/null
-touch "$HOME/Library/Services"
-/System/Library/CoreServices/pbs -update >/dev/null 2>&1 || true
-killall pbs >/dev/null 2>&1 || true
-/System/Library/CoreServices/pbs >/dev/null 2>&1 &
-disown || true
-killall Finder >/dev/null 2>&1 || true
+if [ "$SKIP_SYSTEM_REFRESH" != "1" ]; then
+  touch "$(dirname "$WORKFLOW_DIR")"
+  /System/Library/CoreServices/pbs -update >/dev/null 2>&1 || true
+  killall pbs >/dev/null 2>&1 || true
+  /System/Library/CoreServices/pbs >/dev/null 2>&1 &
+  disown || true
+  killall Finder >/dev/null 2>&1 || true
+fi
 echo "Installed Finder Quick Action -> $WORKFLOW_DIR"

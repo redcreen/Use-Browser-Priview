@@ -19,7 +19,7 @@
 在独立仓库根目录执行：
 
 ```bash
-bash install.sh
+bash install.sh --vscode
 ```
 
 然后在 Codex / VS Code 里执行：
@@ -39,4 +39,4 @@ Developer: Restart Extension Host
 
 - 这只是第一阶段的 adapter 抽离，不是最终共享 runtime 形态
 - 当前预览走的是轻量本地后端，不依赖 `mkdocs`
-- 执行 `bash install.sh` 时会自动清理旧的 `workspace-doc-browser` 安装，避免 VS Code 出现重复右键入口
+- 执行 `bash install.sh --vscode` 时会自动清理旧的 `workspace-doc-browser` 安装，避免 VS Code 出现重复右键入口

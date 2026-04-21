@@ -16,7 +16,9 @@
 | --- | --- | --- | --- |
 | Finder 文件夹预览 | 已安装 Finder Quick Action | 对文件夹项右键执行 `Use Browser Priview` | 浏览器打开的是当前选中文件夹，而不是别的仓库根目录 |
 | Codex / VS Code Markdown 预览 | 已安装编辑器 adapter，且已打开本地 Markdown | 在编辑器里右键执行 `Use Browser Priview` | 浏览器打开当前 Markdown 的预览页 |
-| VS Code 入口收口 | 安装前存在旧 `workspace-doc-browser` 副本 | 执行 `bash install.sh`，重启扩展宿主后在 VS Code 里对 Markdown 右键 | 只剩一个 `Use Browser Priview` 右键入口，且不再出现 `Docs Live` 状态栏入口 |
+| 只装 VS Code | 当前没有 adapter 或存在旧 `workspace-doc-browser` 副本 | 执行 `bash install.sh --vscode`，重启扩展宿主后在 VS Code 里对 Markdown 右键 | 新 adapter 安装成功，旧 `workspace-doc-browser` 副本被清理，且只剩一个 `Use Browser Priview` 右键入口 |
+| 只装 Finder | macOS，尚未安装 Finder 路径 | 执行 `bash install.sh --finder`，然后在 Finder 里对文件夹项右键 | Finder Quick Action 出现且可用，不依赖 VS Code 扩展安装 |
+| 全量安装 | macOS，干净环境或历史安装环境 | 执行 `bash install.sh` | VS Code 和 Finder 两条入口一次安装完成 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | Markdown 相对链接 | 浏览器已经打开 Markdown | 点击相对 Markdown 链接 | 目标 Markdown 继续以渲染页打开，不变成 raw 下载 |
 | 图片预览 | 当前目录包含图片 | 点击图片文件 | 在浏览器内打开图片预览 |
@@ -26,10 +28,14 @@
 ## 自动化覆盖
 
 - `npm test`
+- `bash install.sh --help`
 - `node --check adapters/vscode/extension.js`
 - `node --check adapters/vscode/open-finder-preview.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
 - `bash -n adapters/vscode/install-macos-finder-quick-action.sh`
+- `bash -n install.command`
+- `bash -n install-vscode.command`
+- `bash -n install-finder.command`
 - 本地 smoke test：`WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
 
 ## 手工检查
@@ -51,5 +57,7 @@
 ## 发布门禁
 
 - Finder Quick Action 在 macOS 上安装成功
-- Codex / VS Code adapter 能通过 `install.sh` 装上，并清掉旧的 `workspace-doc-browser` 副本
+- Codex / VS Code adapter 能通过 `bash install.sh --vscode` 装上，并清掉旧的 `workspace-doc-browser` 副本
+- Finder Quick Action 能通过 `bash install.sh --finder` 装上，且不依赖 VS Code 扩展安装
+- `bash install.sh` 能一次安装两条入口
 - 上面的核心验收用例在一台新机器上通过

@@ -19,7 +19,7 @@ It adds browser preview entry points inside Codex / VS Code:
 From the standalone repo root:
 
 ```bash
-bash install.sh
+bash install.sh --vscode
 ```
 
 Then in Codex / VS Code run:
@@ -39,4 +39,4 @@ Developer: Restart Extension Host
 
 - this adapter is the first extraction step, not the final shared-runtime shape
 - the preview currently runs from a lightweight local backend and does not require `mkdocs`
-- legacy `workspace-doc-browser` installs are removed by `bash install.sh` so VS Code keeps a single context-menu action
+- legacy `workspace-doc-browser` installs are removed by `bash install.sh --vscode` so VS Code keeps a single context-menu action

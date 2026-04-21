@@ -4,10 +4,13 @@
   "version": "0.0.1",
   "description": "Standalone browser preview project for Finder and editor context menus.",
   "scripts": {
-    "install:local": "bash install.sh",
+    "install:all": "bash install.sh --all",
+    "install:vscode": "bash install.sh --vscode",
+    "install:finder": "bash install.sh --finder",
     "check:vscode-adapter": "node --check adapters/vscode/extension.js && node --check adapters/vscode/open-finder-preview.js && bash -n adapters/vscode/open-finder-preview.sh && bash -n adapters/vscode/install-macos-finder-quick-action.sh",
+    "check:installers": "bash -n install.sh && bash -n install.command && bash -n install-vscode.command && bash -n install-finder.command",
     "test:vscode-adapter-contract": "node tests/validate-vscode-adapter.mjs",
-    "test:install-local": "node tests/validate-install-local.mjs",
-    "test": "npm run check:vscode-adapter && npm run test:vscode-adapter-contract && npm run test:install-local"
+    "test:install-flows": "node tests/validate-install-flows.mjs",
+    "test": "npm run check:vscode-adapter && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:install-flows"
   }
 }
