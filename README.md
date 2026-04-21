@@ -12,6 +12,7 @@ Use Browser Priview opens local folders and Markdown files in your browser with 
 - directory browsing in the browser
 - image, video, and text preview
 - local session reuse so the same workspace tends to keep the same port
+- the same project root reuses one local preview port across Finder and VS Code / Codex when possible
 
 ## Requirements
 
@@ -96,6 +97,14 @@ The VS Code surface is right-click only. There is no status-bar button and no co
 2. Choose `Use Browser Priview`.
 
 The stable Finder path is folder-item right-click. Blank-area Finder right-click is not supported by the current Quick Action mechanism.
+
+Port reuse follows the project root, not the folder you clicked:
+
+- project root = the nearest parent that contains `.git`, `.hg`, or `.svn`
+- if no such marker exists, the selected folder itself becomes the root
+- open `repo/docs/a/` and then `repo/docs/`: same port
+- open `repo/docs/a/` and then `repo/`: same port
+- open `repo/docs/a/` and then a folder outside that repo: different port
 
 ## Update
 

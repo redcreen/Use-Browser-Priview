@@ -6,6 +6,14 @@ const fs = require("fs");
 const path = require("path");
 const net = require("net");
 const vscode = require("vscode");
+const {
+  deleteSessionRecord,
+  loadSharedSessions,
+  resolveReusableSessionRecord,
+  saveSharedSessions,
+  storeSessionRecord,
+  isSameOrChildPath,
+} = require("./session-store");
 
 const COMMAND_ID = "redcreen.useBrowserPriview.open";
 const OUTPUT_NAME = "Use Browser Priview";
@@ -89,6 +97,7 @@ class WorkspaceDocBrowser {
       browserOpened: Boolean(session.browserOpened),
       serverCodeStamp: this.serverCodeStamp,
     });
+    saveSharedSessions(storeSessionRecord(loadSharedSessions(), session, this.serverCodeStamp));
   }
 
   async clearPersistedSession(workspaceRoot) {
@@ -96,11 +105,47 @@ class WorkspaceDocBrowser {
       return;
     }
     await this.context.globalState.update(this.getSessionStateKey(workspaceRoot), undefined);
+    const result = deleteSessionRecord(loadSharedSessions(), workspaceRoot);
+    if (result.changed) {
+      saveSharedSessions(result.sessions);
+    }
   }
 
   async restorePersistedSession(workspaceRoot) {
     if (!workspaceRoot) {
       return null;
+    }
+    const sharedLookup = await resolveReusableSessionRecord(loadSharedSessions(), {
+      requestedRoot: workspaceRoot,
+      codeStamp: this.serverCodeStamp,
+      isPortReachable,
+      safeKill(pid) {
+        if (!pid) {
+          return;
+        }
+        try {
+          process.kill(pid, "SIGTERM");
+        } catch {}
+      },
+    });
+    if (sharedLookup.changed) {
+      saveSharedSessions(sharedLookup.sessions);
+    }
+    if (sharedLookup.bestReusableSession) {
+      const session = {
+        workspaceRoot: sharedLookup.bestReusableSession.workspaceRoot,
+        baseUrl: `http://127.0.0.1:${sharedLookup.bestReusableSession.port}/`,
+        port: sharedLookup.bestReusableSession.port,
+        pid: sharedLookup.bestReusableSession.pid || null,
+        browserOpened: Boolean(sharedLookup.bestReusableSession.browserOpened),
+        targetUri: null,
+        process: null,
+        restored: true,
+      };
+      this.session = session;
+      this.output.appendLine(`[restore] ${workspaceRoot} -> ${session.baseUrl}`);
+      await this.persistSession(session);
+      return session;
     }
     const stored = this.context.globalState.get(this.getSessionStateKey(workspaceRoot));
     if (!stored || !stored.port) {
@@ -132,6 +177,7 @@ class WorkspaceDocBrowser {
     };
     this.session = session;
     this.output.appendLine(`[restore] ${workspaceRoot} -> ${session.baseUrl}`);
+    await this.persistSession(session);
     return session;
   }
 
@@ -295,7 +341,8 @@ class WorkspaceDocBrowser {
       await this.clearPersistedSession(workspaceRoot);
       return false;
     }
-    const targetUrl = this.getTargetUrl(session.baseUrl, workspaceRoot, targetUri);
+    const sessionWorkspaceRoot = session.workspaceRoot || workspaceRoot;
+    const targetUrl = this.getTargetUrl(session.baseUrl, sessionWorkspaceRoot, targetUri);
     session.targetUri = this.normalizeTargetUri(targetUri);
     this.setPendingOpen(workspaceRoot, `Opening browser preview for ${path.basename(workspaceRoot)}...`, "open");
     try {
@@ -393,14 +440,14 @@ class WorkspaceDocBrowser {
 
     this.announceManualAction(
       workspaceRoot,
-      this.session && this.session.workspaceRoot === workspaceRoot && this.isSessionAlive(this.session) ? "open" : "start",
+      this.isSessionReusableForWorkspace(this.session, workspaceRoot) ? "open" : "start",
     );
 
-    if ((!this.session || this.session.workspaceRoot !== workspaceRoot || !this.isSessionAlive(this.session))) {
+    if (!this.isSessionReusableForWorkspace(this.session, workspaceRoot)) {
       await this.restorePersistedSession(workspaceRoot);
     }
 
-    if (this.session && this.session.workspaceRoot === workspaceRoot && this.isSessionAlive(this.session)) {
+    if (this.isSessionReusableForWorkspace(this.session, workspaceRoot)) {
       await this.openExistingSession(this.session, workspaceRoot, targetUri);
       return;
     }
@@ -420,6 +467,16 @@ class WorkspaceDocBrowser {
           session.process.signalCode === null
         )
       ),
+    );
+  }
+
+  isSessionReusableForWorkspace(session, workspaceRoot) {
+    return Boolean(
+      workspaceRoot &&
+      session &&
+      session.workspaceRoot &&
+      this.isSessionAlive(session) &&
+      isSameOrChildPath(session.workspaceRoot, workspaceRoot),
     );
   }
 

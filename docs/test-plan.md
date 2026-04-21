@@ -18,6 +18,7 @@ This project is risky in three places:
 | VS Code only install | no current adapter or a legacy adapter copy present | Run `bash install.sh --vscode`, restart the extension host, then right-click Markdown in VS Code | The new adapter installs cleanly, legacy `workspace-doc-browser` copies are removed, and only one `Use Browser Priview` context action remains |
 | Finder only install | macOS, Finder path not installed yet | Run `bash install.sh --finder`, then right-click a folder item in Finder | Finder Quick Action appears and works without requiring a VS Code extension install |
 | Full install | macOS, clean machine or stale install | Run `bash install.sh` | VS Code and Finder entry points both install from one command |
+| Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Markdown cross-link | browser already opened on a Markdown file | Click a relative Markdown link | Target Markdown opens as rendered preview, not a raw download |
 | Image preview | browser opened inside a folder containing images | Click an image file | Image preview opens inside the browser UI |
@@ -36,6 +37,7 @@ This project is risky in three places:
 - `bash -n install-vscode.command`
 - `bash -n install-finder.command`
 - local preview smoke test via `WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
+- shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 
 ## Manual Checks
 
@@ -59,4 +61,5 @@ This project is risky in three places:
 - Codex / VS Code adapter installs from `bash install.sh --vscode` and removes legacy `workspace-doc-browser` copies
 - Finder Quick Action installs from `bash install.sh --finder` without requiring a VS Code extension install
 - `bash install.sh` installs both surfaces together
+- Finder and VS Code / Codex reuse the same port for the same project root
 - core acceptance cases above pass on a fresh machine

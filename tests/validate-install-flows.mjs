@@ -68,6 +68,10 @@ function assertExtensionInstalled(sandbox) {
     fs.readFileSync(path.join(repoRoot, "adapters", "vscode", "extension.js"), "utf8"),
     "Installed extension.js should match the adapter source.",
   );
+  assert(
+    fs.existsSync(path.join(installDir, "session-store.js")),
+    "Expected VS Code install to include session-store.js for cross-surface reuse.",
+  );
 }
 
 function assertFinderInstalled(sandbox) {
@@ -77,6 +81,7 @@ function assertFinderInstalled(sandbox) {
 
   assert(fs.existsSync(path.join(runtimeDir, "open-finder-preview.js")), "Expected Finder runtime to include open-finder-preview.js.");
   assert(fs.existsSync(path.join(runtimeDir, "open-finder-preview.sh")), "Expected Finder runtime to include open-finder-preview.sh.");
+  assert(fs.existsSync(path.join(runtimeDir, "session-store.js")), "Expected Finder runtime to include session-store.js.");
   assert(fs.existsSync(path.join(workflowDir, "Contents", "Info.plist")), "Expected Finder workflow Info.plist.");
   assert(
     workflowSource.includes(path.join(runtimeDir, "open-finder-preview.sh")),

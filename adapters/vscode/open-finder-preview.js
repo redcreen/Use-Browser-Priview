@@ -8,6 +8,13 @@ const net = require("net");
 const os = require("os");
 const path = require("path");
 const vm = require("vm");
+const {
+  canonicalPath,
+  loadSharedSessions,
+  resolveReusableSessionRecord,
+  saveSharedSessions,
+  storeSessionRecord,
+} = require("./session-store");
 
 const EXTENSION_SOURCE_PATH = path.join(__dirname, "extension.js");
 const SESSION_DIR = path.join(os.homedir(), ".codex", "workspace-doc-browser", "finder");
@@ -76,21 +83,6 @@ function loadPreviewBuilders() {
 
 function normalizeSlashes(value) {
   return String(value || "").replace(/\\/g, "/");
-}
-
-function canonicalPath(targetPath) {
-  const absolutePath = path.resolve(String(targetPath || ""));
-  try {
-    return fs.realpathSync.native(absolutePath);
-  } catch {
-    return absolutePath;
-  }
-}
-
-function isSameOrChildPath(parentPath, childPath) {
-  const normalizedParent = canonicalPath(parentPath);
-  const normalizedChild = canonicalPath(childPath);
-  return normalizedChild === normalizedParent || normalizedChild.startsWith(`${normalizedParent}${path.sep}`);
 }
 
 function getFileKind(filePath) {
@@ -224,14 +216,25 @@ function ensureSessionDir() {
 }
 
 function loadSessions() {
+  const legacySessions = (() => {
+    try {
+      return JSON.parse(fs.readFileSync(SESSION_FILE, "utf8"));
+    } catch {
+      return {};
+    }
+  })();
   try {
-    return JSON.parse(fs.readFileSync(SESSION_FILE, "utf8"));
+    return {
+      ...legacySessions,
+      ...loadSharedSessions(),
+    };
   } catch {
-    return {};
+    return legacySessions;
   }
 }
 
 function saveSessions(data) {
+  saveSharedSessions(data);
   ensureSessionDir();
   fs.writeFileSync(SESSION_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
@@ -349,55 +352,30 @@ function openUrlInBrowser(targetUrl) {
 }
 
 async function ensureSession(workspaceRoot, buildRawFileServerScript, codeStamp) {
-  const sessions = loadSessions();
-  const requestedRoot = canonicalPath(workspaceRoot);
-  let changed = false;
-  let bestReusableSession = null;
-  for (const [sessionKey, stored] of Object.entries(sessions)) {
-    const storedRoot = canonicalPath(stored.workspaceRoot || sessionKey);
-    if (stored.codeStamp !== codeStamp) {
-      safeKill(stored.pid);
-      delete sessions[sessionKey];
-      changed = true;
-      continue;
-    }
-    if (!stored.port || !(await isPortReachable(stored.port))) {
-      safeKill(stored.pid);
-      delete sessions[sessionKey];
-      changed = true;
-      continue;
-    }
-    if (
-      isSameOrChildPath(storedRoot, requestedRoot) &&
-      (!bestReusableSession || storedRoot.length > canonicalPath(bestReusableSession.workspaceRoot).length)
-    ) {
-      bestReusableSession = {
-        ...stored,
-        workspaceRoot: storedRoot,
-        baseUrl: `http://127.0.0.1:${stored.port}/`,
-      };
-    }
-  }
-  if (changed) {
+  let sessions = loadSessions();
+  const sharedLookup = await resolveReusableSessionRecord(sessions, {
+    requestedRoot: workspaceRoot,
+    codeStamp,
+    isPortReachable,
+    safeKill,
+  });
+  sessions = sharedLookup.sessions;
+  if (sharedLookup.changed) {
     saveSessions(sessions);
   }
-  if (bestReusableSession) {
-    if (!sessions[requestedRoot]) {
-      sessions[requestedRoot] = {
-        workspaceRoot: bestReusableSession.workspaceRoot,
-        port: bestReusableSession.port,
-        pid: bestReusableSession.pid,
-        codeStamp: bestReusableSession.codeStamp,
-      };
-      saveSessions(sessions);
-    }
-    return bestReusableSession;
+  if (sharedLookup.bestReusableSession) {
+    sessions = storeSessionRecord(sessions, sharedLookup.bestReusableSession, codeStamp, sharedLookup.requestedRoot);
+    saveSessions(sessions);
+    return {
+      ...sharedLookup.bestReusableSession,
+      baseUrl: `http://127.0.0.1:${sharedLookup.bestReusableSession.port}/`,
+    };
   }
 
   const port = await findFreePort();
-  const rawServerScript = buildRawFileServerScript(requestedRoot, port);
+  const rawServerScript = buildRawFileServerScript(sharedLookup.requestedRoot, port);
   const child = cp.spawn(process.execPath, ["-e", rawServerScript], {
-    cwd: requestedRoot,
+    cwd: sharedLookup.requestedRoot,
     env: process.env,
     detached: true,
     stdio: "ignore",
@@ -405,12 +383,13 @@ async function ensureSession(workspaceRoot, buildRawFileServerScript, codeStamp)
   child.unref();
   await waitForPortReady(port);
   const nextSession = {
-    workspaceRoot: requestedRoot,
+    workspaceRoot: sharedLookup.requestedRoot,
     port,
     pid: child.pid,
+    browserOpened: false,
     codeStamp,
   };
-  sessions[requestedRoot] = nextSession;
+  sessions = storeSessionRecord(sessions, nextSession, codeStamp);
   saveSessions(sessions);
   return {
     ...nextSession,
