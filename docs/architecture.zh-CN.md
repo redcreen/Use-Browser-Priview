@@ -39,6 +39,8 @@ Launch Surface 是触发入口：
 - `adapters/codex-app/`：可选 Codex 桌面 patch 的独立安装 / 回滚路径
 - 后续 `adapters/<future-editor>/`
 
+Codex 桌面 patch 这条路径现在走的是“staged app bundle swap + clean backup”模式，不再原地改写 `Resources/app.asar`。
+
 ## 当前过渡态
 
 这个仓库刚从原来的 VS Code 中心实现里抽离出来，所以当前是一个有意识的过渡态：

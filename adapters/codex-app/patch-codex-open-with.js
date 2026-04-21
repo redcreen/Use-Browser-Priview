@@ -2,6 +2,7 @@
 "use strict";
 
 const cp = require("child_process");
+const crypto = require("crypto");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -10,7 +11,6 @@ const PATCH_MARKER = "use-browser-priview-codex-open-target-v1";
 const TARGET_ID = "useBrowserPriview";
 const TARGET_LABEL = "Use Browser Priview";
 const TARGET_VAR_NAME = "useBrowserPriviewCodexOpenTarget";
-const BACKUP_BASENAME = "app.asar.original";
 const PATCH_STATE_BASENAME = "codex-app-patch-state.json";
 
 function getSupportDir() {
@@ -36,8 +36,10 @@ function getAppAsarPath(appPath = getCodexAppPath()) {
   return path.join(appPath, "Contents", "Resources", "app.asar");
 }
 
-function getBackupAsarPath() {
-  return path.join(getRuntimeDir(), BACKUP_BASENAME);
+function getBackupAppPath(appPath = getCodexAppPath()) {
+  const appDir = path.dirname(appPath);
+  const appBasename = path.basename(appPath, ".app");
+  return path.join(appDir, `${appBasename}.use-browser-priview-backup.app`);
 }
 
 function getPatchStatePath() {
@@ -50,6 +52,15 @@ function ensureDirectory(targetPath) {
 
 function removePath(targetPath) {
   fs.rmSync(targetPath, { recursive: true, force: true });
+}
+
+function pathExists(targetPath) {
+  try {
+    fs.accessSync(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function execFile(command, args, options = {}) {
@@ -67,6 +78,118 @@ function runAsar(args, options = {}) {
   }
   const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
   return execFile(npxCommand, ["--yes", "@electron/asar", ...args], options);
+}
+
+function runCodesign(args, options = {}) {
+  return execFile("codesign", args, options);
+}
+
+function runSpctl(args, options = {}) {
+  return execFile("spctl", args, options);
+}
+
+function cloneAppBundle(sourceAppPath, targetAppPath) {
+  removePath(targetAppPath);
+  ensureDirectory(path.dirname(targetAppPath));
+  execFile("ditto", [sourceAppPath, targetAppPath]);
+}
+
+function renamePath(sourcePath, targetPath) {
+  fs.renameSync(sourcePath, targetPath);
+}
+
+function signAppBundle(appPath) {
+  if (process.env.USE_BROWSER_PRIVIEW_SKIP_CODE_SIGN === "1") {
+    return;
+  }
+  runCodesign(["--force", "--deep", "--sign", "-", appPath]);
+}
+
+function verifyAppBundle(appPath) {
+  if (process.env.USE_BROWSER_PRIVIEW_SKIP_CODE_SIGN === "1") {
+    return;
+  }
+  runCodesign(["--verify", "--deep", "--strict", appPath]);
+}
+
+function alignInt(value, alignment) {
+  return value + ((alignment - (value % alignment)) % alignment);
+}
+
+function createPickleReader(buffer) {
+  let headerSize = buffer.length - buffer.readUInt32LE(0);
+  if (headerSize > buffer.length || headerSize !== alignInt(headerSize, 4)) {
+    headerSize = 0;
+  }
+  let readIndex = 0;
+  const endIndex = buffer.readUInt32LE(0);
+
+  function getReadPayloadOffsetAndAdvance(length) {
+    if (length > endIndex - readIndex) {
+      readIndex = endIndex;
+      throw new Error(`Failed to read pickle data with length ${length}`);
+    }
+    const readPayloadOffset = headerSize + readIndex;
+    const alignedLength = alignInt(length, 4);
+    if (endIndex - readIndex < alignedLength) {
+      readIndex = endIndex;
+    } else {
+      readIndex += alignedLength;
+    }
+    return readPayloadOffset;
+  }
+
+  return {
+    readInt() {
+      const offset = getReadPayloadOffsetAndAdvance(4);
+      return buffer.readInt32LE(offset);
+    },
+    readUInt32() {
+      const offset = getReadPayloadOffsetAndAdvance(4);
+      return buffer.readUInt32LE(offset);
+    },
+    readString() {
+      const length = this.readInt();
+      const offset = getReadPayloadOffsetAndAdvance(length);
+      return buffer.slice(offset, offset + length).toString();
+    },
+  };
+}
+
+function readAsarHeaderString(asarPath) {
+  const fd = fs.openSync(asarPath, "r");
+  try {
+    const sizeBuffer = Buffer.alloc(8);
+    if (fs.readSync(fd, sizeBuffer, 0, 8, null) !== 8) {
+      throw new Error(`Unable to read ASAR header size from ${asarPath}`);
+    }
+    const size = createPickleReader(sizeBuffer).readUInt32();
+    const headerBuffer = Buffer.alloc(size);
+    if (fs.readSync(fd, headerBuffer, 0, size, null) !== size) {
+      throw new Error(`Unable to read ASAR header from ${asarPath}`);
+    }
+    return createPickleReader(headerBuffer).readString();
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+function updateAsarIntegrity(appPath, asarPath) {
+  const infoPlistPath = path.join(appPath, "Contents", "Info.plist");
+  const rawIntegrityJson = execFile("plutil", ["-extract", "ElectronAsarIntegrity", "json", "-o", "-", infoPlistPath]);
+  const integrity = JSON.parse(rawIntegrityJson);
+  const appAsarIntegrity = integrity["Resources/app.asar"];
+  if (!appAsarIntegrity || typeof appAsarIntegrity !== "object") {
+    throw new Error(`Missing ElectronAsarIntegrity entry for Resources/app.asar in ${infoPlistPath}`);
+  }
+  appAsarIntegrity.hash = crypto.createHash("sha256").update(readAsarHeaderString(asarPath)).digest("hex");
+  execFile("plutil", [
+    "-replace",
+    "ElectronAsarIntegrity",
+    "-json",
+    JSON.stringify(integrity),
+    infoPlistPath,
+  ]);
 }
 
 function findMainBundlePath(extractedRoot) {
@@ -92,23 +215,22 @@ function patchMainBundleSource(source, runtimeScriptPath) {
     return source;
   }
 
-  const registryPattern = /((?:var\s+)|,)([A-Za-z_$][\w$]*)=\[([\s\S]*?)\],([A-Za-z_$][\w$]*)=e\.([A-Za-z_$][\w$]*)\(`open-in-targets`\);/;
+  const registryPattern = /var\s+([A-Za-z_$][\w$]*)=\[([\s\S]*?)\],([A-Za-z_$][\w$]*)=e\.([A-Za-z_$][\w$]*)\(`open-in-targets`\);function\s+([A-Za-z_$][\w$]*)\(e\)\{return\s+\1\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/;
   const registryMatch = source.match(registryPattern);
   if (!registryMatch) {
     throw new Error("Unable to locate Codex open-target registry in the main bundle.");
   }
 
-  const targetsVarName = registryMatch[2];
+  const targetsVarName = registryMatch[1];
   const runtimeLiteral = JSON.stringify(runtimeScriptPath);
   const patchPrelude = [
-    `useBrowserPriviewCodexPatchMarker=${JSON.stringify(PATCH_MARKER)}`,
+    `var useBrowserPriviewCodexPatchMarker=${JSON.stringify(PATCH_MARKER)}`,
     `${TARGET_VAR_NAME}={id:\`${TARGET_ID}\`,platforms:{darwin:{label:\`${TARGET_LABEL}\`,icon:null,kind:\`editor\`,detect:()=>require(\`fs\`).existsSync(${runtimeLiteral})?\`/bin/bash\`:null,open:async({path:t})=>{await new Promise((resolve,reject)=>require(\`child_process\`).execFile(\`/bin/bash\`,[${runtimeLiteral},t],error=>error?reject(error):resolve()))}}}}`,
     `${targetsVarName}=[`,
   ].join(",");
 
-  return source.replace(registryPattern, (_match, prefix, _targetsVar, existingTargets, loggerVarName, loggerFactoryName) => {
-    const declarationPrefix = prefix === "," ? "," : "var ";
-    return `${declarationPrefix}${patchPrelude}${existingTargets},${TARGET_VAR_NAME}],${loggerVarName}=e.${loggerFactoryName}(\`open-in-targets\`);`;
+  return source.replace(registryPattern, (_match, _targetsVar, existingTargets, loggerVarName, loggerFactoryName, flattenFnName) => {
+    return `${patchPrelude}${existingTargets},${TARGET_VAR_NAME}],${loggerVarName}=e.${loggerFactoryName}(\`open-in-targets\`);function ${flattenFnName}(e){return ${targetsVarName}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}`;
   });
 }
 
@@ -136,6 +258,14 @@ function writePatchState(payload) {
   fs.writeFileSync(statePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 }
 
+function readPatchState() {
+  const statePath = getPatchStatePath();
+  if (!pathExists(statePath)) {
+    return null;
+  }
+  return JSON.parse(fs.readFileSync(statePath, "utf8"));
+}
+
 function removePatchState() {
   removePath(getPatchStatePath());
 }
@@ -152,12 +282,29 @@ function assertCodexAppExists(appAsarPath) {
   }
 }
 
+function stagePatchedAppBundle({ sourceAppPath, stagedAppPath, runtimeScriptPath }) {
+  cloneAppBundle(sourceAppPath, stagedAppPath);
+
+  const stagedAsarPath = getAppAsarPath(stagedAppPath);
+  const extractedRoot = path.join(path.dirname(stagedAppPath), "staged-extracted");
+  extractAsar(stagedAsarPath, extractedRoot);
+  const stagedBundle = loadMainBundleSourceFromExtractedRoot(extractedRoot);
+  const patchedSource = patchMainBundleSource(stagedBundle.source, runtimeScriptPath);
+  fs.writeFileSync(stagedBundle.mainBundlePath, patchedSource, "utf8");
+  removePath(stagedAsarPath);
+  packAsar(extractedRoot, stagedAsarPath);
+  removePath(extractedRoot);
+  updateAsarIntegrity(stagedAppPath, stagedAsarPath);
+  signAppBundle(stagedAppPath);
+  verifyAppBundle(stagedAppPath);
+}
+
 function installPatch() {
   const appPath = getCodexAppPath();
   const appAsarPath = getAppAsarPath(appPath);
+  const backupAppPath = getBackupAppPath(appPath);
   const runtimeDir = getRuntimeDir();
   const runtimeScriptPath = getRuntimeScriptPath();
-  const backupAsarPath = getBackupAsarPath();
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "use-browser-priview-codex-patch-"));
 
   ensureDirectory(runtimeDir);
@@ -168,39 +315,48 @@ function installPatch() {
     const currentExtractedRoot = path.join(tempRoot, "current");
     extractAsar(appAsarPath, currentExtractedRoot);
     const currentBundle = loadMainBundleSourceFromExtractedRoot(currentExtractedRoot);
+    const currentPatched = isPatchedMainBundleSource(currentBundle.source);
+    const cleanSourceAppPath = currentPatched ? backupAppPath : appPath;
+    const stagedAppPath = path.join(tempRoot, "Codex.app");
+    const displacedPatchedAppPath = path.join(tempRoot, "Codex.previous-patched.app");
 
-    let sourceExtractedRoot = currentExtractedRoot;
-    let sourceBundle = currentBundle;
-
-    if (isPatchedMainBundleSource(currentBundle.source)) {
-      if (!fs.existsSync(backupAsarPath)) {
-        throw new Error(
-          `Codex.app is already patched, but the original backup is missing: ${backupAsarPath}`,
-        );
-      }
-      const backupExtractedRoot = path.join(tempRoot, "backup");
-      extractAsar(backupAsarPath, backupExtractedRoot);
-      sourceExtractedRoot = backupExtractedRoot;
-      sourceBundle = loadMainBundleSourceFromExtractedRoot(backupExtractedRoot);
-      if (isPatchedMainBundleSource(sourceBundle.source)) {
-        throw new Error(`Original Codex backup is already patched: ${backupAsarPath}`);
-      }
-    } else {
-      ensureDirectory(path.dirname(backupAsarPath));
-      fs.copyFileSync(appAsarPath, backupAsarPath);
+    if (currentPatched && !pathExists(backupAppPath)) {
+      throw new Error(`Codex.app is patched, but the clean backup bundle is missing: ${backupAppPath}`);
     }
 
-    const patchedSource = patchMainBundleSource(sourceBundle.source, runtimeScriptPath);
-    fs.writeFileSync(sourceBundle.mainBundlePath, patchedSource, "utf8");
+    stagePatchedAppBundle({
+      sourceAppPath: cleanSourceAppPath,
+      stagedAppPath,
+      runtimeScriptPath,
+    });
 
-    const patchedAsarPath = path.join(tempRoot, "patched.app.asar");
-    packAsar(sourceExtractedRoot, patchedAsarPath);
-    fs.copyFileSync(patchedAsarPath, appAsarPath);
+    if (!currentPatched) {
+      removePath(backupAppPath);
+      renamePath(appPath, backupAppPath);
+    } else {
+      renamePath(appPath, displacedPatchedAppPath);
+    }
+
+    try {
+      renamePath(stagedAppPath, appPath);
+    } catch (error) {
+      if (pathExists(appPath)) {
+        removePath(appPath);
+      }
+      if (!currentPatched && pathExists(backupAppPath)) {
+        renamePath(backupAppPath, appPath);
+      } else if (pathExists(displacedPatchedAppPath)) {
+        renamePath(displacedPatchedAppPath, appPath);
+      }
+      throw error;
+    }
+
+    removePath(displacedPatchedAppPath);
 
     writePatchState({
       appPath,
-      appAsarPath,
-      backupAsarPath,
+      appAsarPath: getAppAsarPath(appPath),
+      backupAppPath,
       runtimeDir,
       runtimeScriptPath,
       installedAt: new Date().toISOString(),
@@ -218,18 +374,29 @@ function installPatch() {
 
 function uninstallPatch() {
   const appPath = getCodexAppPath();
-  const appAsarPath = getAppAsarPath(appPath);
-  const backupAsarPath = getBackupAsarPath();
+  const patchState = readPatchState();
+  const backupAppPath = patchState?.backupAppPath || getBackupAppPath(appPath);
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "use-browser-priview-codex-unpatch-"));
 
-  assertCodexAppExists(appAsarPath);
-  if (!fs.existsSync(backupAsarPath)) {
-    throw new Error(`Missing original Codex backup: ${backupAsarPath}`);
+  if (!pathExists(backupAppPath)) {
+    throw new Error(`Missing clean Codex backup bundle: ${backupAppPath}`);
   }
 
-  fs.copyFileSync(backupAsarPath, appAsarPath);
-  removePatchState();
-
-  console.log(`Restored Codex.app -> ${appPath}`);
+  try {
+    const displacedPatchedAppPath = path.join(tempRoot, "Codex.patched.app");
+    renamePath(appPath, displacedPatchedAppPath);
+    try {
+      renamePath(backupAppPath, appPath);
+    } catch (error) {
+      renamePath(displacedPatchedAppPath, appPath);
+      throw error;
+    }
+    removePath(displacedPatchedAppPath);
+    removePatchState();
+    console.log(`Restored Codex.app -> ${appPath}`);
+  } finally {
+    removePath(tempRoot);
+  }
 }
 
 function getPatchStatus() {
@@ -237,7 +404,8 @@ function getPatchStatus() {
   const appAsarPath = getAppAsarPath(appPath);
   const runtimeDir = getRuntimeDir();
   const runtimeScriptPath = getRuntimeScriptPath();
-  const backupAsarPath = getBackupAsarPath();
+  const patchState = readPatchState();
+  const backupAppPath = patchState?.backupAppPath || getBackupAppPath(appPath);
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "use-browser-priview-codex-status-"));
 
   try {
@@ -250,9 +418,9 @@ function getPatchStatus() {
       appAsarPath,
       runtimeDir,
       runtimeScriptPath,
-      backupAsarPath,
+      backupAppPath,
       runtimeInstalled: fs.existsSync(runtimeScriptPath),
-      backupExists: fs.existsSync(backupAsarPath),
+      backupExists: pathExists(backupAppPath),
       patched: isPatchedMainBundleSource(source),
     };
   } finally {
@@ -292,13 +460,15 @@ if (require.main === module) {
 }
 
 module.exports = {
-  BACKUP_BASENAME,
   PATCH_MARKER,
   PATCH_STATE_BASENAME,
   TARGET_ID,
   TARGET_LABEL,
+  getBackupAppPath,
   getPatchStatus,
   installPatch,
   patchMainBundleSource,
+  readPatchState,
+  stagePatchedAppBundle,
   uninstallPatch,
 };

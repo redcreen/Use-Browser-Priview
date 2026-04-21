@@ -138,6 +138,14 @@ Finder:
 
 This patch is intentionally separate from the normal install flow because it modifies the local `Codex.app` bundle. Re-run it after Codex updates if the menu disappears.
 
+The installer keeps a clean backup app bundle and swaps the app bundle atomically on install / uninstall. It does not rewrite `Resources/app.asar` in place.
+
+To remove the patch later:
+
+```bash
+bash adapters/codex-app/uninstall-codex-app.sh
+```
+
 ## How To Use
 
 ### In VS Code / Codex
@@ -185,6 +193,7 @@ Run the same install command again:
 - VS Code still shows the old menu: run `Developer: Restart Extension Host`
 - Finder entry does not appear: right-click a folder item, not blank space
 - Codex app menu does not show `Use Browser Priview`: fully quit and reopen Codex after `--codex-app`, then re-run the patch after Codex updates
+- Codex app patch needs to be removed: run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex
 - Browser does not open: make sure Node.js is installed and available in `PATH`
 
 ## Docs

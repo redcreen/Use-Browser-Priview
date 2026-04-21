@@ -39,6 +39,8 @@ Each host-specific adapter is packaged independently so it can match the host's 
 - `adapters/codex-app/`: isolated installer / rollback path for the optional Codex desktop patch
 - future adapters: other editors that support context-menu extensions
 
+The Codex desktop patch path uses a staged app-bundle swap with a clean backup bundle. It does not mutate `Resources/app.asar` in place.
+
 ## Current Transitional State
 
 The repo has just been extracted from a VS Code-centric implementation. The current state is intentionally transitional:

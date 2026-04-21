@@ -10,6 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), "..");
 const require = createRequire(import.meta.url);
 const {
+  getBackupAppPath,
   PATCH_MARKER,
   TARGET_ID,
   patchMainBundleSource,
@@ -17,10 +18,11 @@ const {
 
 function buildSyntheticMainBundle() {
   return [
-    "var a={existsSync:()=>!0},Oo=async()=>{},e={mr:(name)=>name},$o=(value)=>value;",
-    "var Cc={id:`vscode`},mc={id:`systemDefault`},js={id:`fileManager`},_c={id:`zed`},",
-    "Gc=[Cc,mc,js,_c],Kc=e.mr(`open-in-targets`);",
-    "function qc(){return Gc}",
+    "var a={existsSync:()=>!0},Oo=async()=>{},e={kr:(name)=>name};",
+    "var unrelated=[1,2,3],otherLogger=e.kr(`not-open-targets`);function other(e){return unrelated.flatMap(()=>[e])}",
+    "var Cc={id:`vscode`},mc={id:`systemDefault`},js={id:`fileManager`},_c={id:`zed`};",
+    "var Lc=[Cc,mc,js,_c],Rc=e.kr(`open-in-targets`);",
+    "function zc(e){return Lc.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}",
   ].join("");
 }
 
@@ -34,8 +36,12 @@ function testPatchSource() {
   assert(patchedSource.includes(`id:\`${TARGET_ID}\``), "Expected the Codex target id to be injected.");
   assert(patchedSource.includes(runtimeScriptPath), "Expected runtime script path to be embedded in the patch.");
   assert(
-    patchedSource.includes("Gc=[Cc,mc,js,_c,useBrowserPriviewCodexOpenTarget]"),
+    patchedSource.includes("Lc=[Cc,mc,js,_c,useBrowserPriviewCodexOpenTarget]"),
     "Expected the Codex target to be appended to the open-target registry.",
+  );
+  assert(
+    !patchedSource.includes("unrelated=[1,2,3,useBrowserPriviewCodexOpenTarget]"),
+    "Did not expect the patch to latch onto an unrelated array.",
   );
 
   const patchedAgain = patchMainBundleSource(patchedSource, runtimeScriptPath);
@@ -45,6 +51,7 @@ function testPatchSource() {
 function createFakeCodexApp() {
   const sandboxRoot = fs.mkdtempSync(path.join(os.tmpdir(), "use-browser-priview-codex-app-"));
   const appRoot = path.join(sandboxRoot, "Codex.app");
+  const contentsDir = path.join(appRoot, "Contents");
   const resourcesDir = path.join(appRoot, "Contents", "Resources");
   const extractedRoot = path.join(sandboxRoot, "asar-source");
   const mainBundleDir = path.join(extractedRoot, ".vite", "build");
@@ -63,6 +70,30 @@ function createFakeCodexApp() {
       cwd: repoRoot,
       stdio: "pipe",
     },
+  );
+
+  fs.writeFileSync(
+    path.join(contentsDir, "Info.plist"),
+    `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>Codex</string>
+  <key>ElectronAsarIntegrity</key>
+  <dict>
+    <key>Resources/app.asar</key>
+    <dict>
+      <key>algorithm</key>
+      <string>SHA256</string>
+      <key>hash</key>
+      <string>placeholder</string>
+    </dict>
+  </dict>
+</dict>
+</plist>
+`,
+    "utf8",
   );
 
   return { sandboxRoot, appRoot, supportDir, homeDir, resourcesDir };
@@ -91,7 +122,9 @@ function testInstallAndUninstall() {
     HOME: sandbox.homeDir,
     USE_BROWSER_PRIVIEW_SUPPORT_DIR: sandbox.supportDir,
     USE_BROWSER_PRIVIEW_CODEX_APP_PATH: sandbox.appRoot,
+    USE_BROWSER_PRIVIEW_SKIP_CODE_SIGN: "1",
   };
+  const backupAppPath = getBackupAppPath(sandbox.appRoot);
 
   try {
     const installOutput = execFileSync("bash", ["install.sh", "--codex-app"], {
@@ -111,8 +144,8 @@ function testInstallAndUninstall() {
       "Expected Codex runtime to reuse the preview runtime.",
     );
     assert(
-      fs.existsSync(path.join(sandbox.supportDir, "codex-app", "app.asar.original")),
-      "Expected installer to back up the original Codex app bundle.",
+      fs.existsSync(backupAppPath),
+      "Expected installer to create a clean backup Codex app bundle.",
     );
 
     const patchedSource = extractMainBundle(
@@ -139,6 +172,7 @@ function testInstallAndUninstall() {
       !fs.existsSync(path.join(sandbox.supportDir, "codex-app")),
       "Expected uninstall to remove the installed Codex runtime directory.",
     );
+    assert(!fs.existsSync(backupAppPath), "Expected uninstall to restore the backup bundle and remove the backup path.");
   } finally {
     fs.rmSync(sandbox.sandboxRoot, { recursive: true, force: true });
   }

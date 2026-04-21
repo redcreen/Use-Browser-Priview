@@ -138,6 +138,14 @@ Finder：
 
 这部分能力故意独立，因为它会修改本机 `Codex.app` 包内容。如果 Codex 更新后菜单消失，重新执行一次这个安装即可。
 
+当前安装器会先保留一份干净的 app bundle 备份，再用整包原子替换的方式安装 / 回滚，不再原地改写 `Resources/app.asar`。
+
+如果后面要移除这个 patch：
+
+```bash
+bash adapters/codex-app/uninstall-codex-app.sh
+```
+
 ## 怎么用
 
 ### 在 VS Code / Codex 里
@@ -185,6 +193,7 @@ Finder：
 - VS Code 里还是旧菜单：执行 `Developer: Restart Extension Host`
 - Finder 里没看到入口：请对文件夹项右键，不要在空白处右键
 - Codex app 里没看到 `Use Browser Priview`：执行 `--codex-app` 后彻底退出并重开 Codex；如果 Codex 刚更新过，再重新安装一次 patch
+- 需要移除 Codex app patch：执行 `bash adapters/codex-app/uninstall-codex-app.sh`，然后彻底退出并重开 Codex
 - 浏览器没有打开：先确认本机 `PATH` 里能找到 Node.js
 
 ## 文档

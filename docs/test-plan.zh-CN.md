@@ -21,6 +21,7 @@
 | 只装 Finder | macOS，尚未安装 Finder 路径 | 执行 `bash install.sh --finder`，然后在 Finder 里对文件夹项右键 | Finder Quick Action 出现且可用，不依赖 VS Code 扩展安装 |
 | 全量安装 | macOS，干净环境或历史安装环境 | 执行 `bash install.sh` | VS Code 和 Finder 两条入口一次安装完成 |
 | 安装 Codex app patch | macOS，已安装 Codex 桌面 app | 执行 `bash install.sh --codex-app`，彻底退出并重开 Codex，然后在 Codex 里对文件链接右键 | `Open With` 里出现 `Use Browser Priview`，且不影响普通 VS Code / Finder 安装路径 |
+| 回滚 Codex app patch | macOS，已安装 Codex app patch | 执行 `bash adapters/codex-app/uninstall-codex-app.sh`，然后彻底退出并重开 Codex | Codex 回到 clean backup bundle，并且不再带 patch 启动 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | Markdown 相对链接 | 浏览器已经打开 Markdown | 点击相对 Markdown 链接 | 目标 Markdown 继续以渲染页打开，不变成 raw 下载 |
@@ -74,5 +75,6 @@
 - Finder Quick Action 能通过 `bash install.sh --finder` 装上，且不依赖 VS Code 扩展安装
 - `bash install.sh` 能一次安装两条入口
 - `bash install.sh --codex-app` 能单独 patch Codex app，而不改变普通 VS Code / Finder 安装语义
+- Codex patch 安装同时要保留 clean backup bundle，卸载时能从这份 backup 恢复
 - Finder 和 VS Code / Codex 对同一个项目根会复用同一个端口
 - 上面的核心验收用例在一台新机器上通过
