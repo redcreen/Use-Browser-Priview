@@ -239,6 +239,13 @@ class WorkspaceDocBrowser {
         try {
           const stat = fs.statSync(normalizedTargetUri.fsPath);
           if (stat.isDirectory()) {
+            const landingPath = findDirectoryLandingMarkdownPath(workspaceRoot, relativePath);
+            if (landingPath) {
+              return {
+                relativePath: landingPath,
+                kind: "markdown",
+              };
+            }
             kind = "directory";
           }
         } catch {}
@@ -549,6 +556,44 @@ function isMarkdownFile(name, absolutePath) {
   }
 }
 
+function findDirectoryLandingMarkdownPath(workspaceRoot, relativeDir = "") {
+  const normalizedRelativeDir = normalizeSlashes(String(relativeDir || "").replace(/^\/+|\/+$/g, ""));
+  const absoluteDir = path.join(workspaceRoot, normalizedRelativeDir);
+  const preferredNames = [
+    "README.md",
+    "README.zh-CN.md",
+    "index.md",
+  ];
+
+  let entries = [];
+  try {
+    entries = fs.readdirSync(absoluteDir, { withFileTypes: true });
+  } catch {
+    return "";
+  }
+
+  const actualNamesByLower = new Map();
+  for (const entry of entries) {
+    if (entry && entry.name) {
+      actualNamesByLower.set(entry.name.toLowerCase(), entry.name);
+    }
+  }
+
+  for (const preferredName of preferredNames) {
+    const actualName = actualNamesByLower.get(preferredName.toLowerCase());
+    if (!actualName) {
+      continue;
+    }
+    const absolutePath = path.join(absoluteDir, actualName);
+    if (!isMarkdownFile(actualName, absolutePath)) {
+      continue;
+    }
+    return normalizeSlashes(path.posix.join(normalizedRelativeDir, actualName));
+  }
+
+  return "";
+}
+
 function shouldIgnoreEntry(name, isDirectory, options = {}) {
   const includeDotfiles = Boolean(options.includeDotfiles);
   if (!name || name === ".DS_Store") {
@@ -586,6 +631,10 @@ function compareResolvedEntries(left, right) {
 }
 
 function findFirstMarkdownPath(workspaceRoot, relativeDir, visitedRealPaths = new Set()) {
+  const directLandingPath = findDirectoryLandingMarkdownPath(workspaceRoot, relativeDir);
+  if (directLandingPath) {
+    return directLandingPath;
+  }
   const absoluteDir = path.join(workspaceRoot, relativeDir);
   const realDirPath = (() => {
     try {
@@ -823,6 +872,39 @@ function rawRelativePathFromRequestPath(requestPath) {
   return normalized.slice(RAW_PREFIX.length).replace(/^\\/+/, "");
 }
 
+function findDirectoryLandingMarkdownPath(relativeDir) {
+  const normalizedRelativeDir = normalizeSlashes(String(relativeDir || "").replace(/^\\/+|\\/+$/g, ""));
+  const preferredNames = [
+    "README.md",
+    "README.zh-CN.md",
+    "index.md",
+  ];
+  let entries = [];
+  try {
+    entries = fs.readdirSync(path.resolve(rootPath, normalizedRelativeDir), { withFileTypes: true });
+  } catch {
+    return "";
+  }
+  const actualNamesByLower = new Map();
+  for (const entry of entries) {
+    if (entry && entry.name) {
+      actualNamesByLower.set(entry.name.toLowerCase(), entry.name);
+    }
+  }
+  for (const preferredName of preferredNames) {
+    const actualName = actualNamesByLower.get(preferredName.toLowerCase());
+    if (!actualName) {
+      continue;
+    }
+    const candidateRelativePath = normalizeSlashes(path.posix.join(normalizedRelativeDir, actualName));
+    const candidateInfo = inspectWorkspacePath(candidateRelativePath);
+    if (candidateInfo && candidateInfo.isFile && !candidateInfo.isExternal && !candidateInfo.isBrokenSymlink && candidateInfo.kind === "markdown") {
+      return candidateRelativePath;
+    }
+  }
+  return "";
+}
+
 function isCurlRequest(req) {
   const userAgent = String((req && req.headers && req.headers["user-agent"]) || "");
   return /(?:^|\\s)curl\\//i.test(userAgent);
@@ -996,6 +1078,14 @@ http.createServer((req, res) => {
       return send(res, 404, "Not Found", "text/plain; charset=utf-8");
     }
     const normalizedDirectoryPath = normalizeSlashes(relativePath).replace(/^\\/+|\\/+$/g, "");
+    const landingPath = findDirectoryLandingMarkdownPath(normalizedDirectoryPath);
+    if (landingPath) {
+      res.writeHead(302, {
+        Location: "/" + encodeURIComponent(landingPath).replace(/%2F/g, "/"),
+        "Cache-Control": "no-store",
+      });
+      return res.end();
+    }
     if (parsed.pathname !== "/" && !parsed.pathname.endsWith("/")) {
       res.writeHead(302, {
         Location: "/" + encodeURIComponent(normalizedDirectoryPath).replace(/%2F/g, "/") + "/",

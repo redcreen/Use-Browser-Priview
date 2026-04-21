@@ -23,6 +23,7 @@ This project is risky in three places:
 | Codex app patch rollback | macOS, Codex app patch already installed | Run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex | Codex returns to the clean backup bundle and starts without the patch |
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
+| Directory README default landing | The directory contains `README.md` | Open that directory from Finder, VS Code / Codex, or an in-browser directory link | Preview lands on the directory `README.md` instead of stopping on the directory listing first |
 | Markdown cross-link | browser already opened on a Markdown file | Click a relative Markdown link | Target Markdown opens as rendered preview, not a raw download |
 | HTML page preview | browser opened on an `.htm` or `.html` file | Open the file through the preview flow | The file renders as an HTML page instead of plain text |
 | Image preview | browser opened inside a folder containing images | Click an image file | Image preview opens inside the browser UI |
@@ -48,6 +49,7 @@ This project is risky in three places:
 - `bash -n install-codex-app.command`
 - local preview smoke test via `WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
 - HTML preview contract via `node tests/validate-html-preview-contract.mjs`
+- directory README default contract via `node tests/validate-directory-readme-default.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 - Codex desktop patch contract via `node tests/validate-codex-app-patch.mjs`
 

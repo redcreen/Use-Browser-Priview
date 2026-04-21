@@ -24,6 +24,7 @@
 | 回滚 Codex app patch | macOS，已安装 Codex app patch | 执行 `bash adapters/codex-app/uninstall-codex-app.sh`，然后彻底退出并重开 Codex | Codex 回到 clean backup bundle，并且不再带 patch 启动 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
+| 目录 README 默认落点 | 目录内存在 `README.md` | 从 Finder、VS Code / Codex，或浏览器内目录链接打开该目录 | 直接落到同目录的 `README.md`，不先停在目录列表页 |
 | Markdown 相对链接 | 浏览器已经打开 Markdown | 点击相对 Markdown 链接 | 目标 Markdown 继续以渲染页打开，不变成 raw 下载 |
 | HTML 页面预览 | 浏览器打开 `.htm` 或 `.html` 文件 | 通过预览流打开该文件 | 该文件按 HTML 页面渲染，而不是纯文本 |
 | 图片预览 | 当前目录包含图片 | 点击图片文件 | 在浏览器内打开图片预览 |
@@ -49,6 +50,7 @@
 - `bash -n install-codex-app.command`
 - 本地 smoke test：`WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
 - HTML 预览约束：`node tests/validate-html-preview-contract.mjs`
+- 目录 README 默认落点约束：`node tests/validate-directory-readme-default.mjs`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`
 - Codex 桌面 patch 约束：`node tests/validate-codex-app-patch.mjs`
 

@@ -125,6 +125,48 @@ function getPreviewUrl(baseUrl, relativePath, kind = "") {
   return new URL(pathValue, `${String(baseUrl || "").replace(/\/$/, "")}/`).toString();
 }
 
+function findDirectoryLandingMarkdownPath(workspaceRoot, relativeDir = "") {
+  const normalizedRelativeDir = normalizeSlashes(String(relativeDir || "").replace(/^\/+|\/+$/g, ""));
+  const absoluteDir = path.join(workspaceRoot, normalizedRelativeDir);
+  const preferredNames = [
+    "README.md",
+    "README.zh-CN.md",
+    "index.md",
+  ];
+
+  let entries = [];
+  try {
+    entries = fs.readdirSync(absoluteDir, { withFileTypes: true });
+  } catch {
+    return "";
+  }
+
+  const actualNamesByLower = new Map();
+  for (const entry of entries) {
+    if (entry && entry.name) {
+      actualNamesByLower.set(entry.name.toLowerCase(), entry.name);
+    }
+  }
+
+  for (const preferredName of preferredNames) {
+    const actualName = actualNamesByLower.get(preferredName.toLowerCase());
+    if (!actualName) {
+      continue;
+    }
+    const absolutePath = path.join(absoluteDir, actualName);
+    let stat = null;
+    try {
+      stat = fs.statSync(absolutePath);
+    } catch {}
+    if (!stat || !stat.isFile() || getFileKind(actualName) !== "markdown") {
+      continue;
+    }
+    return normalizeSlashes(path.posix.join(normalizedRelativeDir, actualName));
+  }
+
+  return "";
+}
+
 function getTargetDescriptor(workspaceRoot, targetPath) {
   const absoluteTargetPath = canonicalPath(targetPath || workspaceRoot);
   const relativePath = normalizeSlashes(path.relative(workspaceRoot, absoluteTargetPath));
@@ -133,6 +175,15 @@ function getTargetDescriptor(workspaceRoot, targetPath) {
     stat = fs.statSync(absoluteTargetPath);
   } catch {}
   if (!relativePath || relativePath === ".") {
+    const landingPath = stat && stat.isDirectory()
+      ? findDirectoryLandingMarkdownPath(workspaceRoot, "")
+      : "";
+    if (landingPath) {
+      return {
+        relativePath: landingPath,
+        kind: "markdown",
+      };
+    }
     return {
       relativePath: "",
       kind: stat && stat.isDirectory() ? "directory" : "markdown",
@@ -140,6 +191,13 @@ function getTargetDescriptor(workspaceRoot, targetPath) {
   }
   let kind = getFileKind(relativePath);
   if (stat && stat.isDirectory()) {
+    const landingPath = findDirectoryLandingMarkdownPath(workspaceRoot, relativePath);
+    if (landingPath) {
+      return {
+        relativePath: landingPath,
+        kind: "markdown",
+      };
+    }
     kind = "directory";
   }
   return {

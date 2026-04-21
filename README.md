@@ -28,6 +28,7 @@ bash install.sh
 - rendered Markdown preview
 - rendered HTML page preview for `.htm` / `.html`
 - directory browsing in the browser
+- if a directory contains `README.md`, preview opens that README first
 - image, video, and text preview
 - local session reuse so the same workspace tends to keep the same port
 - the same project root reuses one local preview port across Finder and VS Code / Codex when possible
@@ -181,6 +182,8 @@ The VS Code surface is right-click only. There is no status-bar button and no co
 
 Local `.htm` / `.html` files opened through the preview stay rendered as HTML pages instead of falling back to plain text.
 
+If the target is a directory and that directory contains `README.md`, preview opens that README first. The directory listing remains the fallback when no README is present.
+
 ### In Finder
 
 1. Right-click a folder item.
@@ -195,6 +198,7 @@ Port reuse follows the project root, not the folder you clicked:
 - open `repo/docs/a/` and then `repo/docs/`: same port
 - open `repo/docs/a/` and then `repo/`: same port
 - open `repo/docs/a/` and then a folder outside that repo: different port
+- when a directory contains `README.md`, preview lands on that README instead of stopping on the directory listing first
 
 ### In Codex App Link Menus
 
