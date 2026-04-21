@@ -4,6 +4,22 @@
 
 Use Browser Priview opens local folders and Markdown files in your browser with one consistent preview experience.
 
+## Quick Start
+
+For the common path, install the editor right-click entry with one command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh | bash -s -- --vscode
+```
+
+Then run `Developer: Restart Extension Host` once in VS Code / Codex.
+
+If you want everything on macOS, run:
+
+```bash
+bash install.sh
+```
+
 ## What You Get
 
 - Finder folder right-click: `Use Browser Priview`
@@ -20,6 +36,12 @@ Use Browser Priview opens local folders and Markdown files in your browser with 
 - macOS
 - Node.js available locally
 - VS Code / Codex 1.100 or newer if you want the editor integration
+
+## Minimal Configuration
+
+- VS Code / Codex only: macOS + Node.js + `bash install.sh --vscode`
+- Finder only: macOS + Node.js + `bash install.sh --finder`
+- Codex app link-menu patch: macOS + Node.js + a locally installed `Codex.app` + `bash install.sh --codex-app`
 
 ## Install
 
@@ -60,7 +82,7 @@ bash install.sh
 or directly from GitHub:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh | bash
 ```
 
 Finder:
@@ -91,7 +113,7 @@ npm run install:vscode
 or directly from GitHub:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode
+curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh | bash -s -- --vscode
 ```
 
 Finder:
@@ -129,7 +151,7 @@ bash install.sh --codex-app
 or directly from GitHub:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --codex-app
+curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh | bash -s -- --codex-app
 ```
 
 Finder:
@@ -186,7 +208,7 @@ Run the same install command again:
 - VS Code only: `bash install.sh --vscode`
 - Finder only: `bash install.sh --finder`
 - Codex app patch only: `bash install.sh --codex-app`
-- remote VS Code only: `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode`
+- remote VS Code only: `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh | bash -s -- --vscode`
 
 ## Troubleshooting
 
@@ -202,3 +224,4 @@ Run the same install command again:
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Test Plan](docs/test-plan.md)
+- [Release Process](RELEASE.md)

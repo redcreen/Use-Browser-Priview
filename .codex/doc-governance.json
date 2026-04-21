@@ -53,6 +53,7 @@
     ".codex/**",
     "docs/devlog/20*.md",
     "docs/archive/**",
+    "adapters/**",
     "reports/**",
     "workspace/**",
     "releases/**",
@@ -125,6 +126,10 @@
     {
       "glob": "integrations/**/*.md",
       "role": "durable"
+    },
+    {
+      "glob": "adapters/**/*.md",
+      "role": "internal"
     },
     {
       "glob": "docs/workstreams/*.md",
@@ -246,6 +251,7 @@
     "docs/adr/**",
     "docs/devlog/**",
     "docs/archive/**",
+    "adapters/**",
     "reports/generated/**",
     "workspace/**",
     "scripts/**",

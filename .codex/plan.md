@@ -2,14 +2,14 @@
 
 ## Current Phase
 
-Standalone extraction and first runnable baseline.
+Standalone baseline closeout and first tagged release.
 
 ## Current Execution Line
 
-- Objective: turn the extracted repo into a real standalone product baseline
-- Plan Link: stage-1 standalone baseline
-- Runway: one checkpoint-sized execution line
-- Progress: 2 / 5 tasks complete
+- Objective: close Stage 1, converge release-facing docs and governance, and ship the first standalone tagged baseline
+- Plan Link: standalone baseline release closeout
+- Runway: one release closeout pass
+- Progress: 3 / 3 tasks complete
 - Stop Conditions:
   - blocker requires human direction
   - validation fails and changes the direction
@@ -20,11 +20,9 @@ Standalone extraction and first runnable baseline.
 
 ## Execution Tasks
 
-- [x] EL-1 create the standalone repo and baseline control surface
-- [x] EL-2 move the first runnable adapter code into the new repo
-- [ ] EL-3 replace template docs with real project docs and install entrypoints
-- [ ] EL-4 validate Finder and Codex / VS Code install paths from this repo
-- [ ] EL-5 refresh next checkpoint around shared runtime extraction
+- [x] EL-1 converge release-facing docs, governance paths, and install surfaces
+- [x] EL-2 validate repo, installer, and Codex patch gates for release
+- [x] EL-3 tag the standalone baseline release from this repo
 
 ## Development Log Capture
 
@@ -41,14 +39,14 @@ Standalone extraction and first runnable baseline.
   - the change stayed local and introduced no durable tradeoff
 
 ## Architecture Supervision
-- Signal: `yellow`
-- Signal Basis: architecture supervision is guarding against local-only fixes; the current slice is close to a repeated-fix or symptom-only pattern
-- Problem Class: architecture supervision is still mostly a policy, not yet a fully encoded operating surface
-- Root Cause Hypothesis: the repo may still drift toward local fixes because the architecture judgment is not yet encoded as a reusable state
-- Correct Layer: control surface and validation gates
-- Rejected Shortcut: relying on free-form prose instead of a reusable architecture-review state
-- Automatic Review Trigger: the current slice is close to a repeated-fix or symptom-only pattern
-- Escalation Gate: raise but continue
+- Signal: `green`
+- Signal Basis: the standalone repo now carries its install, rollback, patch, and release contracts in durable files with passing validation
+- Problem Class: release closeout and maintenance convergence
+- Root Cause Hypothesis: the remaining complexity is future host-bundle churn, which is bounded by the patch playbook and clone-first validation path
+- Correct Layer: adapter isolation, release docs, staged host patching, and validation gates
+- Rejected Shortcut: cutting a tag without first converging the release-facing docs and recovery paths
+- Automatic Review Trigger: no automatic trigger is currently active
+- Escalation Gate: continue automatically
 
 ## Escalation Model
 
@@ -57,12 +55,12 @@ Standalone extraction and first runnable baseline.
 - Require User Decision: product behavior, compatibility, performance, cost, or UX tradeoffs would change the intended direction
 
 ## Slices
-- Slice: stage-1 standalone baseline
-  - Objective: make the extracted repo independently understandable, installable, and runnable
-  - Dependencies: extracted adapter code, repo docs, local install path
-  - Risks: the repo still reads like an internal transplant instead of a standalone product
-  - Validation: docs validators pass and the first adapter syntax checks pass
-  - Exit Condition: users can install and understand the project from this repo alone
+- Slice: standalone baseline release closeout
+  - Objective: make the repo releaseable as its own tagged product baseline
+  - Dependencies: working installers, stable patch rollback, durable docs, and green release gates
+  - Risks: release surfaces can diverge from the shipped installer behavior if versioned docs are not kept in sync
+  - Validation: release profile gates pass and the tag points to the same install surface the docs describe
+  - Exit Condition: a tagged standalone release exists and the repo can reinstall from that release tag
 
 - Slice: shared runtime extraction
   - Objective: move preview runtime out of the VS Code adapter layout into a shared layer

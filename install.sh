@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_ARCHIVE_SOURCE="https://codeload.github.com/redcreen/Use-Browser-Priview/tar.gz/refs/heads/master"
+DEFAULT_RELEASE_REF="${USE_BROWSER_PRIVIEW_RELEASE_REF:-v0.0.2}"
+DEFAULT_ARCHIVE_SOURCE="https://codeload.github.com/redcreen/Use-Browser-Priview/tar.gz/refs/tags/${DEFAULT_RELEASE_REF}"
 REPO_ROOT=""
 ADAPTER_DIR=""
 EXTENSIONS_DIR="${USE_BROWSER_PRIVIEW_VSCODE_EXTENSIONS_DIR:-$HOME/.vscode/extensions}"

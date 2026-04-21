@@ -7,6 +7,11 @@
 - 架构：[architecture.zh-CN.md](architecture.zh-CN.md)
 - 路线图：[roadmap.zh-CN.md](roadmap.zh-CN.md)
 - 测试：[test-plan.zh-CN.md](test-plan.zh-CN.md)
+- 发布流程：[../RELEASE.zh-CN.md](../RELEASE.zh-CN.md)
+- 参考资料：[reference/README.zh-CN.md](reference/README.zh-CN.md)
+- 工作流说明：[workstreams/README.zh-CN.md](workstreams/README.zh-CN.md)
+- 归档资料：[archive/README.zh-CN.md](archive/README.zh-CN.md)
+- 开发日志：[devlog/README.zh-CN.md](devlog/README.zh-CN.md)
 
 ## 按目标阅读
 | 目标 | 阅读这里 |
@@ -16,3 +21,4 @@
 | 了解交付顺序 | [roadmap.zh-CN.md](roadmap.zh-CN.md) |
 | 了解验证方式 | [test-plan.zh-CN.md](test-plan.zh-CN.md) |
 | 深入查看详细执行队列 | [use-browser-priview/development-plan.zh-CN.md](reference/use-browser-priview/development-plan.zh-CN.md) |
+| 查看长期参考资料 | [reference/README.zh-CN.md](reference/README.zh-CN.md) |

@@ -8,7 +8,7 @@
 | --- | --- |
 | 阶段进度 | 1 / 4 个阶段处于进行中 |
 | 当前阶段 | Stage 1：独立仓库基线 |
-| 当前目标 | turn the extracted repo into a real standalone product baseline |
+| 当前目标 | close Stage 1, converge release-facing docs and governance, and ship the first standalone tagged baseline |
 | 下一已排队切片 | `shared runtime extraction` |
 | 详细下钻 | [reference/use-browser-priview/development-plan.zh-CN.md](reference/use-browser-priview/development-plan.zh-CN.md) |
 
