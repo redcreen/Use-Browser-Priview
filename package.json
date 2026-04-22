@@ -12,6 +12,7 @@
     "check:codex-app": "node --check adapters/codex-app/patch-codex-open-with.js && bash -n adapters/codex-app/open-codex-preview.sh && bash -n adapters/codex-app/install-codex-app.sh && bash -n adapters/codex-app/uninstall-codex-app.sh",
     "check:installers": "bash -n install.sh && bash -n install.command && bash -n install-vscode.command && bash -n install-finder.command && bash -n install-codex-app.command",
     "test:directory-readme-default": "node tests/validate-directory-readme-default.mjs",
+    "test:directory-preview-transient-fetch-retry": "node tests/validate-directory-preview-transient-fetch-retry.mjs",
     "test:finder-shared-session-reuse": "node tests/validate-finder-shared-session-reuse.mjs",
     "test:html-preview-contract": "node tests/validate-html-preview-contract.mjs",
     "test:markdown-link-href-normalization-contract": "node tests/validate-markdown-link-href-normalization-contract.mjs",
@@ -26,6 +27,6 @@
     "test:install-flows": "node tests/validate-install-flows.mjs",
     "test:codex-app-patch": "node tests/validate-codex-app-patch.mjs",
     "test:bootstrap-inline-script-syntax": "node tests/validate-bootstrap-inline-script-syntax.mjs",
-    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:markdown-link-href-normalization-contract && npm run test:port-reuse-after-upgrade && npm run test:safe-text-size-contract && npm run test:image-table-safe-text-size-rendering && npm run test:lazy-tree-loading && npm run test:scroll-restoration-contract && npm run test:shared-runtime-layout && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch && npm run test:bootstrap-inline-script-syntax"
+    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:directory-preview-transient-fetch-retry && npm run test:markdown-link-href-normalization-contract && npm run test:port-reuse-after-upgrade && npm run test:safe-text-size-contract && npm run test:image-table-safe-text-size-rendering && npm run test:lazy-tree-loading && npm run test:scroll-restoration-contract && npm run test:shared-runtime-layout && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch && npm run test:bootstrap-inline-script-syntax"
   }
 }

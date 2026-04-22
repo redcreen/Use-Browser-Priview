@@ -1355,6 +1355,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     let treeRendered = false;
     let mermaidApi = null;
     let mermaidLoadPromise = null;
+    const treeLoadPromises = new Map();
     const openFolders = new Set();
     const sidebarStateKey = "workspace-doc-browser.sidebar:" + workspaceName;
     const scrollStateKeyPrefix = "workspace-doc-browser.scroll:" + workspaceName + ":";
@@ -1497,6 +1498,28 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       const segments = normalizedPath.split("/").filter(Boolean);
       segments.pop();
       return segments.join("/");
+    }
+
+    function wait(delayMs) {
+      return new Promise((resolve) => {
+        setTimeout(resolve, delayMs);
+      });
+    }
+
+    async function fetchWithRetry(url, options = {}, retryCount = 2, retryDelayMs = 120) {
+      let lastError = null;
+      for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+        try {
+          return await fetch(url, options);
+        } catch (error) {
+          lastError = error;
+          if (attempt >= retryCount) {
+            throw error;
+          }
+          await wait(retryDelayMs * (attempt + 1));
+        }
+      }
+      throw lastError || new Error("Failed to fetch.");
     }
 
     function getAncestorDirectoryPaths(directoryPath) {
@@ -2035,22 +2058,31 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
 
     async function loadTreeDirectory(directoryPath = "") {
       const normalizedPath = normalizeTreePath(directoryPath);
-      const response = await fetch(buildTreeUrl(normalizedPath), { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error("HTTP " + response.status);
+      if (treeLoadPromises.has(normalizedPath)) {
+        return treeLoadPromises.get(normalizedPath);
       }
-      const json = await response.json();
-      const items = Array.isArray(json) ? json : [];
-      const signature = JSON.stringify(items);
-      if (treeSignatures.get(normalizedPath) !== signature) {
-        treeSignatures.set(normalizedPath, signature);
-        treeCache.set(normalizedPath, items);
-        return true;
-      }
-      if (!treeCache.has(normalizedPath)) {
-        treeCache.set(normalizedPath, items);
-      }
-      return false;
+      const promise = (async () => {
+        const response = await fetchWithRetry(buildTreeUrl(normalizedPath), { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        const json = await response.json();
+        const items = Array.isArray(json) ? json : [];
+        const signature = JSON.stringify(items);
+        if (treeSignatures.get(normalizedPath) !== signature) {
+          treeSignatures.set(normalizedPath, signature);
+          treeCache.set(normalizedPath, items);
+          return true;
+        }
+        if (!treeCache.has(normalizedPath)) {
+          treeCache.set(normalizedPath, items);
+        }
+        return false;
+      })().finally(() => {
+        treeLoadPromises.delete(normalizedPath);
+      });
+      treeLoadPromises.set(normalizedPath, promise);
+      return await promise;
     }
 
     async function ensureTreePathsLoaded(paths, options = {}) {
@@ -2287,7 +2319,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         }
         return;
       }
-      const response = await fetch(rawFileHref(relativePath), { cache: "no-store" });
+      const response = await fetchWithRetry(rawFileHref(relativePath), { cache: "no-store" });
       if (!response.ok) {
         throw new Error("HTTP " + response.status);
       }
