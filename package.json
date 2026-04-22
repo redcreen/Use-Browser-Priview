@@ -18,6 +18,7 @@
     "test:port-reuse-after-upgrade": "node tests/validate-port-reuse-after-upgrade.mjs",
     "test:safe-text-size-contract": "node tests/validate-safe-text-size-contract.mjs",
     "test:image-table-safe-text-size-rendering": "node tests/validate-image-table-safe-text-size-rendering.mjs",
+    "test:lazy-tree-loading": "node tests/validate-lazy-tree-loading.mjs",
     "test:scroll-restoration-contract": "node tests/validate-scroll-restoration-contract.mjs",
     "test:shared-runtime-layout": "node tests/validate-shared-runtime-layout.mjs",
     "test:shared-session-store": "node tests/validate-shared-session-store.mjs",
@@ -25,6 +26,6 @@
     "test:install-flows": "node tests/validate-install-flows.mjs",
     "test:codex-app-patch": "node tests/validate-codex-app-patch.mjs",
     "test:bootstrap-inline-script-syntax": "node tests/validate-bootstrap-inline-script-syntax.mjs",
-    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:markdown-link-href-normalization-contract && npm run test:port-reuse-after-upgrade && npm run test:safe-text-size-contract && npm run test:image-table-safe-text-size-rendering && npm run test:scroll-restoration-contract && npm run test:shared-runtime-layout && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch && npm run test:bootstrap-inline-script-syntax"
+    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:markdown-link-href-normalization-contract && npm run test:port-reuse-after-upgrade && npm run test:safe-text-size-contract && npm run test:image-table-safe-text-size-rendering && npm run test:lazy-tree-loading && npm run test:scroll-restoration-contract && npm run test:shared-runtime-layout && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch && npm run test:bootstrap-inline-script-syntax"
   }
 }

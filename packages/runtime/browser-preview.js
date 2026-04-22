@@ -522,22 +522,42 @@ function sendRawFile(req, res, target) {
   });
 }
 
-function buildRepoTree(relativeDir, visitedRealPaths = new Set()) {
+function directoryHasVisibleChildren(relativeDir) {
+  const directoryInfo = inspectWorkspacePath(relativeDir);
+  if (!directoryInfo || !directoryInfo.isDirectory || directoryInfo.isExternal || directoryInfo.isBrokenSymlink) {
+    return false;
+  }
+  let entries = [];
+  try {
+    entries = fs.readdirSync(directoryInfo.absolutePath, { withFileTypes: true });
+  } catch {
+    return false;
+  }
+  for (const entry of entries) {
+    const entryRelativePath = normalizeSlashes(path.posix.join(relativeDir, entry.name));
+    const info = inspectWorkspacePath(entryRelativePath);
+    if (!info) {
+      continue;
+    }
+    if (shouldIgnoreEntry(entry.name, Boolean(info.isDirectory), true)) {
+      continue;
+    }
+    if (info.isDirectory || info.isFile) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function buildDirectoryEntries(relativeDir) {
   const directoryInfo = inspectWorkspacePath(relativeDir);
   if (!directoryInfo || !directoryInfo.isDirectory || directoryInfo.isExternal || directoryInfo.isBrokenSymlink) {
     return [];
   }
-  const realDirectoryPath = directoryInfo.realPath || directoryInfo.absolutePath;
-  if (visitedRealPaths.has(realDirectoryPath)) {
-    return [];
-  }
-  const nextVisitedRealPaths = new Set(visitedRealPaths);
-  nextVisitedRealPaths.add(realDirectoryPath);
 
-  const absoluteDir = directoryInfo.absolutePath;
   let entries = [];
   try {
-    entries = fs.readdirSync(absoluteDir, { withFileTypes: true })
+    entries = fs.readdirSync(directoryInfo.absolutePath, { withFileTypes: true })
       .map((entry) => {
         const entryRelativePath = normalizeSlashes(path.posix.join(relativeDir, entry.name));
         const info = inspectWorkspacePath(entryRelativePath);
@@ -565,9 +585,7 @@ function buildRepoTree(relativeDir, visitedRealPaths = new Set()) {
         kind: "directory",
         path: relativePath,
         isSymlink: info.isSymlink,
-        children: (!info.isExternal && !info.isBrokenSymlink)
-          ? buildRepoTree(relativePath, nextVisitedRealPaths)
-          : [],
+        hasChildren: !info.isExternal && !info.isBrokenSymlink && directoryHasVisibleChildren(relativePath),
       });
       continue;
     }
@@ -599,7 +617,21 @@ http.createServer((req, res) => {
 
   const parsed = new URL(req.url, "http://127.0.0.1");
   if (parsed.pathname === "/__workspace_doc_browser__/tree") {
-    return send(res, 200, JSON.stringify(buildRepoTree("")), "application/json; charset=utf-8");
+    const relativeDir = normalizeSlashes(String(parsed.searchParams.get("path") || "").replace(/^\\/+|\\/+$/g, ""));
+    const directoryInfo = inspectWorkspacePath(relativeDir);
+    if (!directoryInfo) {
+      return send(res, 404, "Not Found", "text/plain; charset=utf-8");
+    }
+    if (directoryInfo.isExternal) {
+      return send(res, 403, "Symlink target is outside the workspace.", "text/plain; charset=utf-8");
+    }
+    if (directoryInfo.isBrokenSymlink) {
+      return send(res, 404, "Broken symlink.", "text/plain; charset=utf-8");
+    }
+    if (!directoryInfo.isDirectory) {
+      return send(res, 404, "Not Found", "text/plain; charset=utf-8");
+    }
+    return send(res, 200, JSON.stringify(buildDirectoryEntries(relativeDir)), "application/json; charset=utf-8");
   }
   if (parsed.pathname === "/__workspace_doc_browser__/bootstrap") {
     const relativePath = String(parsed.searchParams.get("path") || "");
@@ -810,6 +842,15 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       font-size: 14px;
       line-height: 1.45;
     }
+    .tree summary:hover {
+      background: var(--sidebar-hover);
+      color: var(--link);
+    }
+    .tree summary.active {
+      color: var(--link);
+      font-weight: 600;
+      background: rgba(9, 105, 218, 0.08);
+    }
     .tree a {
       display: block;
       padding: 7px 16px;
@@ -861,6 +902,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       min-width: 0;
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+    .tree-loading {
+      display: block;
+      padding: 7px 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
     }
     .content {
       padding: 32px 36px 40px;
@@ -1302,8 +1350,9 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     const sidebarToggle = document.getElementById("sidebar-toggle");
     const mermaidScriptUrl = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
     let lastMarkdown = "";
-    let lastTreeJson = "";
-    let lastTreeData = [];
+    const treeCache = new Map();
+    const treeSignatures = new Map();
+    let treeRendered = false;
     let mermaidApi = null;
     let mermaidLoadPromise = null;
     const openFolders = new Set();
@@ -1426,6 +1475,74 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return rawPrefix + encodePath(sourcePath) + query + (hashPart ? "#" + encodeURIComponent(hashPart) : "");
     }
 
+    function normalizeTreePath(value) {
+      return String(value || "").replace(/^\\/+|\\/+$/g, "");
+    }
+
+    function buildTreeUrl(directoryPath = "") {
+      const normalizedPath = normalizeTreePath(directoryPath);
+      return normalizedPath
+        ? "/__workspace_doc_browser__/tree?path=" + encodeURIComponent(normalizedPath)
+        : "/__workspace_doc_browser__/tree";
+    }
+
+    function getCurrentDirectoryPath() {
+      const normalizedPath = normalizeTreePath(relativePath);
+      if (!normalizedPath) {
+        return "";
+      }
+      if (currentResourceKind === "directory") {
+        return normalizedPath;
+      }
+      const segments = normalizedPath.split("/").filter(Boolean);
+      segments.pop();
+      return segments.join("/");
+    }
+
+    function getAncestorDirectoryPaths(directoryPath) {
+      const normalizedPath = normalizeTreePath(directoryPath);
+      if (!normalizedPath) {
+        return [];
+      }
+      const segments = normalizedPath.split("/").filter(Boolean);
+      const ancestors = [];
+      for (let index = 0; index < segments.length; index += 1) {
+        ancestors.push(segments.slice(0, index + 1).join("/"));
+      }
+      return ancestors;
+    }
+
+    function getTreeItems(directoryPath = "") {
+      return treeCache.get(normalizeTreePath(directoryPath)) || [];
+    }
+
+    function collectRequiredTreePaths() {
+      const requiredPaths = new Set([""]);
+      const currentDirectoryPath = getCurrentDirectoryPath();
+      for (const ancestorPath of getAncestorDirectoryPaths(currentDirectoryPath)) {
+        requiredPaths.add(ancestorPath);
+      }
+      if (currentResourceKind === "directory" && currentDirectoryPath) {
+        requiredPaths.add(currentDirectoryPath);
+      }
+      for (const openPath of openFolders) {
+        const normalizedPath = normalizeTreePath(openPath);
+        if (!normalizedPath) {
+          requiredPaths.add("");
+          continue;
+        }
+        requiredPaths.add(normalizedPath);
+        for (const ancestorPath of getAncestorDirectoryPaths(normalizedPath)) {
+          requiredPaths.add(ancestorPath);
+        }
+      }
+      return Array.from(requiredPaths).sort((left, right) => {
+        const leftDepth = normalizeTreePath(left).split("/").filter(Boolean).length;
+        const rightDepth = normalizeTreePath(right).split("/").filter(Boolean).length;
+        return leftDepth - rightDepth;
+      });
+    }
+
     function resolvePreviewHref(href) {
       const raw = normalizeMarkdownHref(href);
       if (!raw) {
@@ -1445,7 +1562,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       if (isDirectoryLink) {
         return previewHref(resolvedPath, "directory", hashPart);
       }
-      const treeEntry = findTreeEntryByPath(lastTreeData, resolvedPath);
+      const treeEntry = findTreeEntryByPath(resolvedPath);
       if (treeEntry && treeEntry.kind === "directory") {
         return previewHref(resolvedPath, "directory", hashPart);
       }
@@ -1827,47 +1944,141 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return '<div class="content-shell"><div class="file-meta">' + renderFileMeta() + '</div><div class="markdown-body"><p class="empty-state">This file type is not rendered inline yet.</p><p><a class="asset-button" href="' + escapeHtml(rawHref) + '" target="_blank" rel="noreferrer">Open Raw File</a></p></div></div>';
     }
 
-    function findDirectoryChildren(items, targetPath) {
-      const normalizedTarget = String(targetPath || "").replace(/^\\/+|\\/+$/g, "");
-      if (!normalizedTarget) {
-        return Array.isArray(items) ? items : [];
-      }
-      const segments = normalizedTarget.split("/").filter(Boolean);
-      let currentItems = Array.isArray(items) ? items : [];
-      for (const segment of segments) {
-        const nextItem = currentItems.find((item) => item.kind === "directory" && item.path && item.path.split("/").pop() === segment);
-        if (!nextItem) {
-          return [];
-        }
-        currentItems = Array.isArray(nextItem.children) ? nextItem.children : [];
-      }
-      return currentItems;
+    function findDirectoryChildren(targetPath) {
+      return getTreeItems(targetPath);
     }
 
-    function findTreeEntryByPath(items, targetPath) {
-      const normalizedTarget = String(targetPath || "").replace(/^\\/+|\\/+$/g, "");
+    function findTreeEntryByPath(targetPath) {
+      const normalizedTarget = normalizeTreePath(targetPath);
       if (!normalizedTarget) {
         return null;
       }
-      const queue = Array.isArray(items) ? items.slice() : [];
-      while (queue.length) {
-        const item = queue.shift();
-        if (!item || typeof item !== "object") {
+      for (const items of treeCache.values()) {
+        if (!Array.isArray(items)) {
           continue;
         }
-        if (item.kind === "directory" && String(item.path || "").replace(/^\\/+|\\/+$/g, "") === normalizedTarget) {
-          return item;
-        }
-        if (item.kind !== "directory" && String(item.sourcePath || "").replace(/^\\/+|\\/+$/g, "") === normalizedTarget) {
-          return item;
-        }
-        if (Array.isArray(item.children) && item.children.length) {
-          queue.push(...item.children);
+        for (const item of items) {
+          if (!item || typeof item !== "object") {
+            continue;
+          }
+          if (item.kind === "directory" && normalizeTreePath(item.path) === normalizedTarget) {
+            return item;
+          }
+          if (item.kind !== "directory" && normalizeTreePath(item.sourcePath) === normalizedTarget) {
+            return item;
+          }
         }
       }
       return null;
     }
 
+    function renderTreeLoadingState() {
+      return '<ul class="tree"><li><span class="tree-loading">Loading…</span></li></ul>';
+    }
+
+    function bindTreeInteractions() {
+      sidebarBody.querySelectorAll("details[data-path]").forEach((details) => {
+        if (details.dataset.bound === "1") {
+          return;
+        }
+        details.dataset.bound = "1";
+        details.addEventListener("toggle", () => {
+          const normalizedPath = normalizeTreePath(details.dataset.path);
+          if (details.open) {
+            openFolders.add(normalizedPath);
+            void ensureTreePathsLoaded([normalizedPath], { renderAfterLoad: true });
+          } else {
+            openFolders.delete(normalizedPath);
+          }
+        });
+      });
+    }
+
+    function renderTreeItems(items) {
+      return "<ul class=\\"tree\\">" + items.map((item) => {
+        if (item.kind === "directory") {
+          const directoryPath = normalizeTreePath(item.path);
+          const isActiveDirectory = currentResourceKind === "directory" && normalizeTreePath(relativePath) === directoryPath;
+          const shouldOpen = isActiveDirectory || openFolders.has(directoryPath) || (directoryPath && normalizeTreePath(relativePath).startsWith(directoryPath + "/"));
+          const childItems = getTreeItems(directoryPath);
+          const childMarkup = shouldOpen
+            ? (childItems.length
+              ? renderTreeItems(childItems)
+              : (item.hasChildren ? renderTreeLoadingState() : ""))
+            : "";
+          return "<li><details data-path=\\"" + escapeHtml(directoryPath) + "\\" " + (shouldOpen ? "open" : "") + "><summary class=\\"" + (isActiveDirectory ? "active" : "") + "\\">" + escapeHtml(item.title) + "</summary>" + childMarkup + "</details></li>";
+        }
+        const active = currentResourceKind !== "directory" && item.sourcePath === relativePath ? " active" : "";
+        let href = rawFileHref(item.sourcePath || "");
+        if (item.kind === "markdown" || item.kind === "html" || item.kind === "image" || item.kind === "video" || item.kind === "text") {
+          href = previewHref(item.sourcePath || "", item.kind);
+        }
+        const labelHtml = item.kind === "image"
+          ? '<span class="tree-file"><span class="tree-thumb"><img alt="" loading="lazy" src="' + escapeHtml(rawFileHref(item.sourcePath || "", "", item.sourcePath || "")) + '"></span><span class="tree-label">' + escapeHtml(item.title) + "</span></span>"
+          : '<span class="tree-file"><span class="tree-label">' + escapeHtml(item.title) + "</span></span>";
+        return "<li><a class=\\"repo-link" + active + "\\" href=\\"" + escapeHtml(href) + "\\">" + labelHtml + "</a></li>";
+      }).join("") + "</ul>";
+    }
+
+    function renderTree(force = false) {
+      const rootItems = getTreeItems("");
+      if (!rootItems.length && !treeCache.has("")) {
+        return;
+      }
+      if (!force && treeRendered && !rootItems.length) {
+        return;
+      }
+      sidebarBody.innerHTML = renderTreeItems(rootItems);
+      bindTreeInteractions();
+      treeRendered = true;
+    }
+
+    async function loadTreeDirectory(directoryPath = "") {
+      const normalizedPath = normalizeTreePath(directoryPath);
+      const response = await fetch(buildTreeUrl(normalizedPath), { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      const json = await response.json();
+      const items = Array.isArray(json) ? json : [];
+      const signature = JSON.stringify(items);
+      if (treeSignatures.get(normalizedPath) !== signature) {
+        treeSignatures.set(normalizedPath, signature);
+        treeCache.set(normalizedPath, items);
+        return true;
+      }
+      if (!treeCache.has(normalizedPath)) {
+        treeCache.set(normalizedPath, items);
+      }
+      return false;
+    }
+
+    async function ensureTreePathsLoaded(paths, options = {}) {
+      let changed = false;
+      for (const directoryPath of paths) {
+        changed = (await loadTreeDirectory(directoryPath)) || changed;
+      }
+      if (changed || !treeRendered || options.renderAfterLoad) {
+        renderTree(Boolean(options.renderAfterLoad));
+        if (currentResourceKind === "markdown" && changed) {
+          lastMarkdown = "";
+        }
+      }
+    }
+
+    async function loadTree() {
+      captureOpenFolders();
+      await ensureTreePathsLoaded(collectRequiredTreePaths());
+    }
+
+    async function ensureCurrentDirectoryLoaded() {
+      const currentDirectoryPath = getCurrentDirectoryPath();
+      const pathsToLoad = currentDirectoryPath ? ["", ...getAncestorDirectoryPaths(currentDirectoryPath)] : [""];
+      if (currentResourceKind === "directory" && currentDirectoryPath) {
+        pathsToLoad.push(currentDirectoryPath);
+      }
+      await ensureTreePathsLoaded(Array.from(new Set(pathsToLoad)));
+    }
     function renderDirectoryCard(item) {
       const resourcePath = item.kind === "directory" ? (item.path || "") : (item.sourcePath || "");
       let href = rawFileHref(resourcePath);
@@ -2026,57 +2237,20 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       openFolders.clear();
       document.querySelectorAll("details[data-path]").forEach((details) => {
         if (details.open) {
-          openFolders.add(details.dataset.path);
+          openFolders.add(normalizeTreePath(details.dataset.path));
         }
       });
-    }
-
-    function renderTreeItems(items) {
-      return "<ul class=\\"tree\\">" + items.map((item) => {
-        if (item.children && item.children.length) {
-          const shouldOpen = (item.path && relativePath.startsWith(item.path + "/")) || openFolders.has(item.path);
-          return "<li><details data-path=\\"" + escapeHtml(item.path || "") + "\\" " + (shouldOpen ? "open" : "") + "><summary>" + escapeHtml(item.title) + "</summary>" + renderTreeItems(item.children) + "</details></li>";
-        }
-        const active = currentResourceKind !== "directory" && item.sourcePath === relativePath ? " active" : "";
-        let href = rawFileHref(item.sourcePath || "");
-        if (item.kind === "markdown" || item.kind === "html" || item.kind === "image" || item.kind === "video" || item.kind === "text") {
-          href = previewHref(item.sourcePath || "", item.kind);
-        }
-        const labelHtml = item.kind === "image"
-          ? '<span class="tree-file"><span class="tree-thumb"><img alt="" loading="lazy" src="' + escapeHtml(rawFileHref(item.sourcePath || "", "", item.sourcePath || "")) + '"></span><span class="tree-label">' + escapeHtml(item.title) + "</span></span>"
-          : '<span class="tree-file"><span class="tree-label">' + escapeHtml(item.title) + "</span></span>";
-        return "<li><a class=\\"repo-link" + active + "\\" href=\\"" + escapeHtml(href) + "\\">" + labelHtml + "</a></li>";
-      }).join("") + "</ul>";
-    }
-
-    async function loadTree() {
-      captureOpenFolders();
-      const response = await fetch("/__workspace_doc_browser__/tree", { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error("HTTP " + response.status);
-      }
-      const tree = await response.json();
-      const treeJson = JSON.stringify(tree);
-      if (treeJson !== lastTreeJson) {
-        lastTreeJson = treeJson;
-        lastTreeData = Array.isArray(tree) ? tree : [];
-        sidebarBody.innerHTML = renderTreeItems(tree);
-        if (currentResourceKind === "markdown") {
-          lastMarkdown = "";
-        }
-      }
     }
 
     async function loadCurrentFile() {
       const fileKind = currentResourceKind === "directory" ? "directory" : fileKindForPath(relativePath);
       if (fileKind === "directory") {
-        if (!lastTreeJson) {
-          await loadTree();
-        }
-        const directorySignature = "__directory__:" + relativePath + ":" + lastTreeJson;
+        await ensureCurrentDirectoryLoaded();
+        const directoryItems = findDirectoryChildren(relativePath);
+        const directorySignature = "__directory__:" + normalizeTreePath(relativePath) + ":" + JSON.stringify(directoryItems);
         if (lastMarkdown !== directorySignature) {
           lastMarkdown = directorySignature;
-          content.innerHTML = renderDirectoryFrame(findDirectoryChildren(lastTreeData, relativePath));
+          content.innerHTML = renderDirectoryFrame(directoryItems);
           restoreSavedScrollPosition(3);
         }
         return;
@@ -2169,8 +2343,10 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       });
     }
     setSidebarCollapsed(restoreSidebarState());
-    refreshTree();
     refreshFile();
+    window.requestAnimationFrame(() => {
+      void refreshTree();
+    });
     setInterval(refreshTree, treeRefreshMs);
     setInterval(refreshFile, fileRefreshMs);
   </script>

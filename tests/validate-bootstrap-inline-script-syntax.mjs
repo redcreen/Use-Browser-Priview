@@ -161,7 +161,7 @@ const sandbox = {
   },
   window: windowObject,
   fetch: async (url) => {
-    if (url === "/__workspace_doc_browser__/tree") {
+    if (String(url).startsWith("/__workspace_doc_browser__/tree")) {
       return {
         ok: true,
         async json() {
