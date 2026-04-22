@@ -8,9 +8,10 @@ This directory records durable implementation narratives: what went wrong, what 
 
 ## Entries
 
-- [Preserve sidebar position during tree navigation](2026-04-22-preserve-sidebar-position-during-tree-navigation.md)
-- [Reduce preview jank on deep note pages](2026-04-22-reduce-preview-jank-on-deep-note-pages.md)
+- [Retry sidebar scroll restoration after tree growth](2026-04-23-retry-sidebar-scroll-restoration-after-tree-growth.md)
 - [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
+- [Reduce preview jank on deep note pages](2026-04-22-reduce-preview-jank-on-deep-note-pages.md)
+- [Preserve sidebar position during tree navigation](2026-04-22-preserve-sidebar-position-during-tree-navigation.md)
 - [Preserve preview ports across runtime upgrades](2026-04-22-preserve-preview-ports-across-runtime-upgrades.md)
 - [Hot-load preview runtime without host restart](2026-04-22-hot-load-preview-runtime-without-host-restart.md)
 - [Extract shared preview runtime](2026-04-22-extract-shared-preview-runtime.md)

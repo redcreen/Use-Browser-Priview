@@ -1474,6 +1474,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     let scrollSaveFrame = 0;
     let sidebarScrollSaveFrame = 0;
     let sidebarScrollRestored = false;
+    let sidebarScrollRestoreTarget = 0;
 
     function escapeHtml(value) {
       return String(value || "")
@@ -2348,7 +2349,9 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       treeRendered = true;
       const targetSidebarScroll = previousScrollTop > 0
         ? previousScrollTop
-        : (sidebarScrollRestored ? previousScrollTop : loadSavedSidebarScroll());
+        : (sidebarScrollRestoreTarget > 0
+          ? sidebarScrollRestoreTarget
+          : (sidebarScrollRestored ? previousScrollTop : loadSavedSidebarScroll()));
       restoreSidebarScroll(targetSidebarScroll);
       const durationMs = Number((nowMs() - startedAt).toFixed(2));
       if (durationMs >= 8 || sidebarBody.innerHTML.length >= 20000) {
@@ -2503,8 +2506,10 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       if (!storage || !sidebarBody) {
         return;
       }
+      const nextScrollTop = Math.max(0, Math.round(sidebarBody.scrollTop || 0));
+      sidebarScrollRestoreTarget = nextScrollTop;
       try {
-        storage.setItem(sidebarScrollStateKey, String(Math.max(0, Math.round(sidebarBody.scrollTop || 0))));
+        storage.setItem(sidebarScrollStateKey, String(nextScrollTop));
       } catch {}
     }
 
@@ -2522,12 +2527,22 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       if (!sidebarBody) {
         return;
       }
-      const targetScrollTop = explicitScrollTop === null ? loadSavedSidebarScroll() : explicitScrollTop;
+      const targetScrollTop = explicitScrollTop === null
+        ? (sidebarScrollRestoreTarget > 0 ? sidebarScrollRestoreTarget : loadSavedSidebarScroll())
+        : explicitScrollTop;
       if (!Number.isFinite(targetScrollTop) || targetScrollTop <= 0) {
         return;
       }
+      sidebarScrollRestoreTarget = targetScrollTop;
       const apply = () => {
         sidebarBody.scrollTop = targetScrollTop;
+        const actualScrollTop = Number(sidebarBody.scrollTop || 0);
+        const scrollHeight = Number(sidebarBody.scrollHeight || 0);
+        const clientHeight = Number(sidebarBody.clientHeight || 0);
+        const maxScrollTop = Math.max(0, scrollHeight - clientHeight);
+        if (maxScrollTop >= targetScrollTop - 2 || actualScrollTop >= targetScrollTop - 2) {
+          sidebarScrollRestoreTarget = actualScrollTop;
+        }
       };
       apply();
       window.requestAnimationFrame(apply);

@@ -40,9 +40,18 @@ const content = {
     return [];
   },
 };
+let sidebarScrollTop = 0;
 const sidebarBody = {
   innerHTML: "",
-  scrollTop: 0,
+  clientHeight: 200,
+  scrollHeight: 200,
+  set scrollTop(value) {
+    const maxScrollTop = Math.max(0, this.scrollHeight - this.clientHeight);
+    sidebarScrollTop = Math.max(0, Math.min(Number(value) || 0, maxScrollTop));
+  },
+  get scrollTop() {
+    return sidebarScrollTop;
+  },
   addEventListener() {},
   querySelectorAll() {
     return [];
@@ -58,6 +67,8 @@ const bodyClassSet = new Set();
 const sessionStorage = makeStorage({
   "workspace-doc-browser.sidebar-scroll:style engine": "180",
 });
+const intervalCallbacks = [];
+let workspaceTreeVersion = 0;
 
 const sandbox = {
   console,
@@ -141,9 +152,13 @@ const sandbox = {
       return {
         ok: true,
         async json() {
-          return [
+          const items = [
             { title: "README.md", kind: "markdown", sourcePath: "workspace/README.md", isSymlink: false },
           ];
+          if (workspaceTreeVersion > 0) {
+            items.push({ title: "Guide.md", kind: "markdown", sourcePath: "workspace/Guide.md", isSymlink: false });
+          }
+          return items;
         },
       };
     }
@@ -157,8 +172,9 @@ const sandbox = {
     }
     throw new Error(`Unexpected fetch ${String(url)}`);
   },
-  setInterval() {
-    return 1;
+  setInterval(callback) {
+    intervalCallbacks.push(callback);
+    return intervalCallbacks.length;
   },
   clearInterval() {},
   URL,
@@ -176,12 +192,27 @@ await new Promise((resolve) => setImmediate(resolve));
 
 assert.equal(
   sidebarBody.scrollTop,
+  0,
+  "Expected the first sidebar restore attempt to clamp to the top when the tree is still too short.",
+);
+
+workspaceTreeVersion = 1;
+sidebarBody.scrollHeight = 500;
+await intervalCallbacks[0]();
+await new Promise((resolve) => setImmediate(resolve));
+
+assert.equal(
+  sidebarBody.scrollTop,
   180,
-  "Expected the sidebar tree to restore its previous scroll position after rendering.",
+  "Expected the sidebar tree to retry its saved scroll position after later tree renders make that offset reachable.",
 );
 assert(
   inlineScript.includes("workspace-doc-browser.sidebar-scroll:"),
   "Expected the runtime to persist sidebar scroll state for cross-page navigation.",
+);
+assert(
+  inlineScript.includes("sidebarScrollRestoreTarget"),
+  "Expected the runtime to preserve a pending sidebar scroll target until later tree renders can apply it.",
 );
 
 console.log("validate-sidebar-scroll-restoration: ok");
