@@ -1357,6 +1357,32 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     .markdown-body {
       font-size: 17px;
     }
+    .markdown-body .markdown-size-inline,
+    .markdown-body .markdown-size-block {
+      font-weight: inherit;
+      letter-spacing: inherit;
+    }
+    .markdown-body .markdown-size-block {
+      display: block;
+    }
+    .markdown-body .markdown-size-block > :last-child {
+      margin-bottom: 0;
+    }
+    .markdown-body .markdown-size-sm {
+      font-size: 0.88em;
+    }
+    .markdown-body .markdown-size-base {
+      font-size: 1em;
+    }
+    .markdown-body .markdown-size-lg {
+      font-size: 1.18em;
+    }
+    .markdown-body .markdown-size-xl {
+      font-size: 1.38em;
+    }
+    .markdown-body .markdown-size-2xl {
+      font-size: 1.72em;
+    }
     .markdown-body > :first-child {
       margin-top: 0;
     }
@@ -1745,6 +1771,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     const openFolders = new Set();
     const sidebarStateKey = "workspace-doc-browser.sidebar:" + workspaceName;
     const scrollStateKeyPrefix = "workspace-doc-browser.scroll:" + workspaceName + ":";
+    const safeTextSizeClassMap = Object.freeze({
+      sm: "markdown-size-sm",
+      base: "markdown-size-base",
+      lg: "markdown-size-lg",
+      xl: "markdown-size-xl",
+      "2xl": "markdown-size-2xl",
+    });
     let scrollEntryId = "";
     let scrollSaveFrame = 0;
 
@@ -1813,6 +1846,11 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         return decoded.slice(1, -1).trim();
       }
       return decoded;
+    }
+
+    function getSafeTextSizeClass(value) {
+      const normalized = String(value || "").trim().toLowerCase();
+      return safeTextSizeClassMap[normalized] || "";
     }
 
     function resolveRelativePath(basePath, targetPath) {
@@ -1914,13 +1952,40 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return count ? slug + "-" + count : slug;
     }
 
-    function renderInline(value) {
-      let text = escapeHtml(value);
+    function renderInline(value, options = {}) {
+      const allowSafeTextSizes = options.allowSafeTextSizes !== false;
+      const inlineSizeTokens = [];
+      let source = String(value || "");
+      if (allowSafeTextSizes) {
+        source = source.replace(/\[\[size:(sm|base|lg|xl|2xl)\|([\s\S]+?)\]\]/gi, (_, sizeToken, content) => {
+          const sizeClass = getSafeTextSizeClass(sizeToken);
+          if (!sizeClass) {
+            return _;
+          }
+          const tokenId = inlineSizeTokens.length;
+          inlineSizeTokens.push({
+            sizeClass,
+            content,
+          });
+          return "@@UBP_SAFE_TEXT_SIZE_" + tokenId + "@@";
+        });
+      }
+
+      let text = escapeHtml(source);
       text = text.replace(/!\\[([^\\]]*)\\]\\(([^)]+)\\)/g, (_, alt, href) => '<img alt="' + escapeHtml(alt) + '" src="' + escapeHtml(resolveInlineImageSrc(href)) + '">');
       text = text.replace(/\\\`([^\\\`]+)\\\`/g, "<code>$1</code>");
       text = text.replace(/\\*\\*([^*]+)\\*\\*/g, "<strong>$1</strong>");
       text = text.replace(/\\*([^*]+)\\*/g, "<em>$1</em>");
       text = text.replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, (_, label, href) => '<a href="' + escapeHtml(resolvePreviewHref(href)) + '">' + label + '</a>');
+      if (allowSafeTextSizes && inlineSizeTokens.length) {
+        text = text.replace(/@@UBP_SAFE_TEXT_SIZE_(\d+)@@/g, (_, tokenIndex) => {
+          const token = inlineSizeTokens[Number(tokenIndex)];
+          if (!token) {
+            return "";
+          }
+          return '<span class="markdown-size-inline ' + token.sizeClass + '">' + renderInline(token.content, { allowSafeTextSizes: false }) + "</span>";
+        });
+      }
       return text;
     }
 
@@ -2064,6 +2129,23 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           flushParagraph();
           flushList();
           continue;
+        }
+        const sizeBlock = line.match(/^:::size-(sm|base|lg|xl|2xl)\s*$/i);
+        if (sizeBlock) {
+          flushParagraph();
+          flushList();
+          const sizeClass = getSafeTextSizeClass(sizeBlock[1]);
+          const blockLines = [];
+          let closingIndex = index + 1;
+          while (closingIndex < lines.length && !/^:::\s*$/.test(lines[closingIndex])) {
+            blockLines.push(lines[closingIndex]);
+            closingIndex += 1;
+          }
+          if (closingIndex < lines.length && /^:::\s*$/.test(lines[closingIndex]) && sizeClass) {
+            output.push('<div class="markdown-size-block ' + sizeClass + '">' + renderMarkdown(blockLines.join("\\n")) + "</div>");
+            index = closingIndex;
+            continue;
+          }
         }
         if (line.includes("|") && isTableDivider(nextLine)) {
           flushParagraph();

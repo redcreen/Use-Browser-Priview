@@ -187,6 +187,19 @@ bash adapters/codex-app/uninstall-codex-app.sh
 
 同一个预览标签页里使用浏览器前进 / 后退时，会恢复这个页面之前记住的滚动位置，而不是总回到顶部。
 
+Markdown 里的字号控制走安全白名单语法，不开放任意 HTML 或内联 CSS：
+
+```md
+[[size:lg|这一句会更大。]]
+
+:::size-xl
+这一整段都会更大。
+里面仍然可以继续写 **加粗** 和 [链接](./README.md)。
+:::
+```
+
+支持的字号只有：`sm`、`base`、`lg`、`xl`、`2xl`。
+
 ### 在 Finder 里
 
 1. 对一个文件夹项右键。

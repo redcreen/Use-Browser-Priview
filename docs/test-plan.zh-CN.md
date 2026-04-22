@@ -26,6 +26,7 @@
 | 代码升级后的端口复用 | 同一个项目根已经占用一个预览端口 | 升级运行时代码后，再从 Finder 或 VS Code / Codex 打开同一个仓库 | 先停掉旧进程，再在可回收时继续使用原端口，不悄悄换成新端口 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | 目录 README 默认落点 | 目录内存在 `README.md` | 从 Finder、VS Code / Codex，或浏览器内目录链接打开该目录 | 直接落到同目录的 `README.md`，不先停在目录列表页 |
+| 安全 Markdown 字号 | Markdown 中包含 `[[size:lg|...]]` 或 `:::size-xl` 块 | 在浏览器预览中打开该 Markdown | 只有白名单字号 token 会生效，不需要开放任意 HTML / 内联 CSS |
 | Markdown 尖括号链接目标 | Markdown 中存在 `[标题](<../../path/to/file.md>)` 或带 `&` 查询参数的外链 | 点击链接 | 相对路径正常解析，不残留 `&gt;` / `&amp;` 这类 HTML 实体 |
 | 前进后退位置恢复 | 浏览器已经在同一个预览标签页里打开过多个页面 | 向下滚动后进入下一个页面，再执行浏览器后退 / 前进 | 返回页面时恢复到之前记住的滚动位置，而不是回到顶部 |
 | Markdown 相对链接 | 浏览器已经打开 Markdown | 点击相对 Markdown 链接 | 目标 Markdown 继续以渲染页打开，不变成 raw 下载 |
@@ -56,6 +57,7 @@
 - 目录 README 默认落点约束：`node tests/validate-directory-readme-default.mjs`
 - Markdown 链接目标归一化约束：`node tests/validate-markdown-link-href-normalization-contract.mjs`
 - 代码升级后端口复用约束：`node tests/validate-port-reuse-after-upgrade.mjs`
+- 安全 Markdown 字号约束：`node tests/validate-safe-text-size-contract.mjs`
 - 前进后退位置恢复约束：`node tests/validate-scroll-restoration-contract.mjs`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`
 - Codex 桌面 patch 约束：`node tests/validate-codex-app-patch.mjs`

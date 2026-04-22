@@ -25,6 +25,7 @@ This project is risky in three places:
 | Port reuse after runtime upgrade | The same project root already has a preview session on one port | Upgrade the runtime code, then open the same repo again from Finder or VS Code / Codex | The old preview process is stopped, the original port is reclaimed when available, and the repo stays on the same port |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Directory README default landing | The directory contains `README.md` | Open that directory from Finder, VS Code / Codex, or an in-browser directory link | Preview lands on the directory `README.md` instead of stopping on the directory listing first |
+| Safe Markdown text sizes | Markdown contains `[[size:lg|...]]` or a `:::size-xl` block | Open the Markdown file in browser preview | Only the whitelisted size tokens render larger text; arbitrary HTML / inline CSS is still not required |
 | Markdown angle-bracket link targets | Markdown contains `[title](<../../path/to/file.md>)` or an external link with `&` query params | Click the link | Relative targets resolve correctly and the resulting href does not leak `&gt;` / `&amp;` entities |
 | Back / forward position restore | Multiple pages have already been opened in the same preview tab | Scroll down, open another page, then use browser back / forward | Returning to the earlier page restores the previously remembered scroll position instead of jumping to the top |
 | Markdown cross-link | browser already opened on a Markdown file | Click a relative Markdown link | Target Markdown opens as rendered preview, not a raw download |
@@ -55,6 +56,7 @@ This project is risky in three places:
 - directory README default contract via `node tests/validate-directory-readme-default.mjs`
 - markdown link href normalization contract via `node tests/validate-markdown-link-href-normalization-contract.mjs`
 - port reuse after upgrade contract via `node tests/validate-port-reuse-after-upgrade.mjs`
+- safe Markdown text-size contract via `node tests/validate-safe-text-size-contract.mjs`
 - back / forward position restore contract via `node tests/validate-scroll-restoration-contract.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 - Codex desktop patch contract via `node tests/validate-codex-app-patch.mjs`

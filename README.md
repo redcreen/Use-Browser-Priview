@@ -187,6 +187,19 @@ If the target is a directory and that directory contains `README.md`, preview op
 
 Back / forward inside the same preview tab restores the previously remembered scroll position instead of always jumping back to the top.
 
+Markdown text size uses a safe whitelist syntax instead of arbitrary HTML or inline CSS:
+
+```md
+[[size:lg|This sentence is larger.]]
+
+:::size-xl
+This whole block is larger.
+You can still use **bold** and [links](./README.md) inside it.
+:::
+```
+
+Supported sizes: `sm`, `base`, `lg`, `xl`, `2xl`.
+
 ### In Finder
 
 1. Right-click a folder item.
