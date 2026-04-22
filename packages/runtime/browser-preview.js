@@ -1459,6 +1459,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     let mermaidLoadPromise = null;
     const treeLoadPromises = new Map();
     const openFolders = new Set();
+    const suppressedAutoOpenFolders = new Set();
     const sidebarStateKey = "workspace-doc-browser.sidebar:" + workspaceName;
     const sidebarScrollStateKey = "workspace-doc-browser.sidebar-scroll:" + workspaceName;
     const scrollStateKeyPrefix = "workspace-doc-browser.scroll:" + workspaceName + ":";
@@ -2240,7 +2241,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           summary.dataset.bound = "1";
           const handleBranchPromotion = (event) => {
             const normalizedPath = normalizeTreePath(details.dataset.path);
-            if (details.dataset.branchOnly === "1" && !openFolders.has(normalizedPath)) {
+            if (details.dataset.branchOnly === "1" && !details.open && !openFolders.has(normalizedPath)) {
               event.preventDefault();
               event.stopPropagation();
               openFolders.add(normalizedPath);
@@ -2271,9 +2272,11 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           const normalizedPath = normalizeTreePath(details.dataset.path);
           if (details.open) {
             openFolders.add(normalizedPath);
+            suppressedAutoOpenFolders.delete(normalizedPath);
             void ensureTreePathsLoaded([createTreeRequest(normalizedPath)], { renderAfterLoad: true });
           } else {
             openFolders.delete(normalizedPath);
+            suppressedAutoOpenFolders.add(normalizedPath);
           }
         });
       });
@@ -2313,8 +2316,9 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           const href = previewHref(directoryPath, "directory");
           const isActiveDirectory = currentResourceKind === "directory" && normalizeTreePath(relativePath) === directoryPath;
           const isCurrentFileDirectory = currentResourceKind !== "directory" && directoryPath === getCurrentDirectoryPath();
-          const branchOnly = !openFolders.has(directoryPath) && isPathOnCurrentBranch(directoryPath) && !isCurrentFileDirectory;
-          const shouldOpen = isActiveDirectory || isCurrentFileDirectory || openFolders.has(directoryPath) || branchOnly;
+          const autoOpenSuppressed = suppressedAutoOpenFolders.has(directoryPath);
+          const branchOnly = !autoOpenSuppressed && !openFolders.has(directoryPath) && isPathOnCurrentBranch(directoryPath) && !isCurrentFileDirectory;
+          const shouldOpen = openFolders.has(directoryPath) || (!autoOpenSuppressed && (isActiveDirectory || isCurrentFileDirectory || branchOnly));
           const childItems = getTreeItems(directoryPath);
           const childMarkup = shouldOpen
             ? (childItems.length

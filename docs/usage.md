@@ -57,6 +57,7 @@ Large directories on the active path do not eagerly render every sibling on firs
 - very large sibling sets stay on-demand until you manually expand that directory
 - manual expand still loads the full directory listing when you ask for it
 - this avoids re-rendering hundreds of sibling folders on every refresh for note-style repositories
+- if you manually collapse the current branch, that closed state stays in effect until you reopen it yourself; expanding a sibling directory does not silently reopen the branch you just closed
 
 ## Safe Markdown Text Sizes
 

@@ -32,8 +32,8 @@ preview performance hardening
 
 ## Development Log Capture
 - Trigger Level: high
-- Pending Capture: no
-- Reason: latest devlog already captures the most recent durable reasoning
+- Pending Capture: yes
+- Reason: commits landed after the latest devlog and changed durable repo surfaces; latest examples: fix: auto-expand current file directories in preview tree
 - Last Entry: `docs/devlog/2026-04-23-retry-sidebar-scroll-restoration-after-tree-growth.md`
 
 ## Architecture Supervision
