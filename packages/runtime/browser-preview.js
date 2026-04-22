@@ -1056,7 +1056,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       margin-bottom: 0;
     }
     .markdown-body .markdown-size-sm {
-      font-size: 0.8em;
+      font-size: 0.68em;
     }
     .markdown-body .markdown-size-base {
       font-size: 1em;

@@ -34,7 +34,7 @@ preview performance hardening
 - Trigger Level: high
 - Pending Capture: no
 - Reason: latest devlog already captures the most recent durable reasoning
-- Last Entry: `docs/devlog/2026-04-23-zz-lower-safe-sm-text-size-scale.md`
+- Last Entry: `docs/devlog/2026-04-23-zzz-tighten-safe-sm-text-size-for-image-table-labels.md`
 
 ## Architecture Supervision
 - Signal: `green`

@@ -8,6 +8,7 @@
 
 ## 条目
 
+- [ZZZ tighten safe sm text size for image-table labels](2026-04-23-zzz-tighten-safe-sm-text-size-for-image-table-labels.md)
 - [ZZ lower safe sm text size scale](2026-04-23-zz-lower-safe-sm-text-size-scale.md)
 - [Make manual sidebar collapse override branch auto-open](2026-04-23-user-collapse-overrides-branch-auto-open.md)
 - [Retry sidebar scroll restoration after tree growth](2026-04-23-retry-sidebar-scroll-restoration-after-tree-growth.md)
