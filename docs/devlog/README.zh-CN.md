@@ -8,8 +8,8 @@
 
 ## 条目
 
-- [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
 - [Reduce preview jank on deep note pages](2026-04-22-reduce-preview-jank-on-deep-note-pages.md)
+- [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
 - [Preserve preview ports across runtime upgrades](2026-04-22-preserve-preview-ports-across-runtime-upgrades.md)
 - [Hot-load preview runtime without host restart](2026-04-22-hot-load-preview-runtime-without-host-restart.md)
 - [Extract shared preview runtime](2026-04-22-extract-shared-preview-runtime.md)

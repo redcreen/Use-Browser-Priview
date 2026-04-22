@@ -32,9 +32,9 @@ preview performance hardening
 
 ## Development Log Capture
 - Trigger Level: high
-- Pending Capture: no
-- Reason: the latest durable performance hardening has already been captured in the newest devlog entry
-- Last Entry: `docs/devlog/2026-04-22-reduce-preview-jank-on-deep-note-pages.md`
+- Pending Capture: yes
+- Reason: commits landed after the latest devlog and changed durable repo surfaces; latest examples: perf: defer large sidebar sibling loads; fix: preserve tree layout for lazy-loaded directories
+- Last Entry: `docs/devlog/2026-04-22-support-safe-text-sizes-inside-markdown-tables.md`
 
 ## Architecture Supervision
 - Signal: `green`

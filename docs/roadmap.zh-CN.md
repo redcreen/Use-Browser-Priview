@@ -8,8 +8,8 @@
 | --- | --- |
 | 阶段进度 | 2 / 4 个阶段已完成 |
 | 当前阶段 | Stage 2：共享 Runtime 抽离 |
-| 当前目标 | 在不破坏共享 runtime 行为和端口复用的前提下，让深层笔记页预览保持流畅 |
-| 下一已排队切片 | `editor adapter expansion` |
+| 当前目标 | keep deep note-page previews responsive without regressing shared-runtime behavior or port reuse（在不破坏共享 runtime 行为和端口复用的前提下，让深层笔记页预览保持流畅） |
+| 下一已排队切片 | `standalone baseline release closeout` |
 | 详细下钻 | [reference/use-browser-priview/development-plan.zh-CN.md](reference/use-browser-priview/development-plan.zh-CN.md) |
 
 ## 里程碑规则
