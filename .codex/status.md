@@ -32,9 +32,9 @@ shared runtime extraction
 
 ## Development Log Capture
 - Trigger Level: high
-- Pending Capture: no
-- Reason: latest devlog already captures the shared-runtime extraction reasoning
-- Last Entry: `docs/devlog/2026-04-22-extract-shared-preview-runtime.md`
+- Pending Capture: yes
+- Reason: commits landed after the latest devlog and changed durable repo surfaces; latest examples: feat: extract shared preview runtime; feat: hot-load preview runtime without host restart
+- Last Entry: `docs/devlog/2026-04-22-support-safe-text-sizes-inside-markdown-tables.md`
 
 ## Architecture Supervision
 - Signal: `green`
