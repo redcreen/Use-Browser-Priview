@@ -79,25 +79,21 @@ You can still use **bold**, `code`, and [links](./README.md).
 - arbitrary `<span style="font-size: ...">` is not supported
 - arbitrary inline CSS is not supported
 - only the fixed size tokens above are supported
-- do not use `[[size:...|...]]` inside Markdown table cells
 
-### Table Cells: Correct vs Wrong
+### Table Cells
 
-Inside Markdown tables, the `|` inside `[[size:...|...]]` conflicts with the table column separator.
-
-Wrong:
+Safe text-size syntax also works inside Markdown table cells:
 
 ```md
 | [[size:sm|3.4w likes · 2101 saves]] | [[size:sm|2.1w likes · 2588 saves]] |
 ```
 
-Correct:
+You can mix image links and text-size tokens in the same table:
 
 ```md
-| 3.4w likes · 2101 saves | 2.1w likes · 2588 saves |
+| [![](<../../notes/demo/note-01.jpg>)](<../../notes/demo/note.md>) | [![](<../../notes/demo/note-02.jpg>)](<../../notes/demo/note-02.md>) |
+| [[size:sm|3.4w likes · 2101 saves]] | [[size:sm|2.1w likes · 2588 saves]] |
 ```
-
-If you need text-size emphasis, use the safe size syntax outside the table, and keep table cells as plain text.
 
 ## Troubleshooting
 

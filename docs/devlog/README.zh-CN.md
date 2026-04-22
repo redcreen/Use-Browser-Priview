@@ -8,6 +8,7 @@
 
 ## 条目
 
+- [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
 - [Preserve preview ports across runtime upgrades](2026-04-22-preserve-preview-ports-across-runtime-upgrades.md)
 - [Clarify safe text-size syntax limits inside tables](2026-04-22-clarify-safe-text-size-syntax-limits-inside-tables.md)
 - [Add safe Markdown text-size syntax](2026-04-22-add-safe-markdown-text-size-syntax.md)

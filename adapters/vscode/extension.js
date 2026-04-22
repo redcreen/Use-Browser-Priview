@@ -1989,6 +1989,26 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return text;
     }
 
+    function protectSafeTextSizeTokens(value) {
+      const protectedTokens = [];
+      const protectedValue = String(value || "").replace(/\[\[size:(sm|base|lg|xl|2xl)\|([\s\S]+?)\]\]/gi, (match) => {
+        const tokenId = protectedTokens.length;
+        protectedTokens.push(match);
+        return "@@UBP_SAFE_TABLE_SIZE_" + tokenId + "@@";
+      });
+      return {
+        protectedValue,
+        protectedTokens,
+      };
+    }
+
+    function restoreSafeTextSizeTokens(value, protectedTokens) {
+      return String(value || "").replace(/@@UBP_SAFE_TABLE_SIZE_(\d+)@@/g, (_, tokenIndex) => {
+        const token = protectedTokens[Number(tokenIndex)];
+        return token || "";
+      });
+    }
+
     function mermaidConfig() {
       return {
         startOnLoad: false,
@@ -2096,7 +2116,10 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
 
       function parseTableRow(line) {
         const trimmed = String(line || "").trim().replace(/^\\|/, "").replace(/\\|$/, "");
-        return trimmed.split("|").map((cell) => cell.trim());
+        const protectedRow = protectSafeTextSizeTokens(trimmed);
+        return protectedRow.protectedValue
+          .split("|")
+          .map((cell) => restoreSafeTextSizeTokens(cell, protectedRow.protectedTokens).trim());
       }
 
       function renderTable(headerCells, rows) {

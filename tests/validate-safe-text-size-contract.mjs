@@ -13,5 +13,8 @@ assert(extensionSource.includes("^:::size-(sm|base|lg|xl|2xl)\\s*$"), "Expected 
 assert(extensionSource.includes("markdown-size-inline"), "Expected inline safe text size class to be rendered.");
 assert(extensionSource.includes("markdown-size-block"), "Expected block safe text size class to be rendered.");
 assert(extensionSource.includes("markdown-size-2xl"), "Expected 2xl safe text size class to be supported.");
+assert(extensionSource.includes("protectSafeTextSizeTokens"), "Expected table parsing to preserve safe text-size tokens before splitting columns.");
+assert(extensionSource.includes("@@UBP_SAFE_TABLE_SIZE_"), "Expected table-safe placeholders to protect safe text-size syntax inside table rows.");
+assert(extensionSource.includes("restoreSafeTextSizeTokens"), "Expected table parsing to restore safe text-size tokens after splitting columns.");
 
 console.log("validate-safe-text-size-contract: ok");
