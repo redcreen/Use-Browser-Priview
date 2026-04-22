@@ -852,13 +852,18 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       background: rgba(9, 105, 218, 0.08);
     }
     .tree-directory-link {
+      display: inline;
+      padding: 0;
+      border-left: 0;
       color: inherit;
+      font-size: inherit;
+      line-height: inherit;
       text-decoration: none;
     }
     .tree-directory-link:hover {
       text-decoration: underline;
     }
-    .tree a {
+    .tree .repo-link {
       display: block;
       padding: 7px 16px;
       color: var(--text);
@@ -868,11 +873,11 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       line-height: 1.45;
       word-break: break-word;
     }
-    .tree a:hover {
+    .tree .repo-link:hover {
       background: var(--sidebar-hover);
       color: var(--link);
     }
-    .tree a.active {
+    .tree .repo-link.active {
       color: var(--link);
       font-weight: 600;
       border-left-color: var(--link);

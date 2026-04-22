@@ -191,5 +191,13 @@ assert(
   sidebarBody.innerHTML.includes("/workspace/sytle-images/xiaohongshu/keyword/%E7%AB%AF%E5%8D%88/"),
   "Expected directory entries like 端午/ to expose a navigable preview URL in the sidebar tree.",
 );
+assert(
+  html.includes(".tree .repo-link {"),
+  "Expected tree file links to use the dedicated repo-link selector instead of styling every tree anchor.",
+);
+assert(
+  html.includes("display: inline;") && html.includes(".tree-directory-link"),
+  "Expected directory links inside summary rows to stay inline so the disclosure marker and label align.",
+);
 
 console.log("validate-directory-preview-transient-fetch-retry: ok");
