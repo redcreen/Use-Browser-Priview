@@ -1218,10 +1218,12 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     }
     .markdown-body .table-wrap.image-grid-table tr.image-grid-meta-row .markdown-size-inline.markdown-size-sm {
       display: inline-block;
+      font-size: 0.58em;
       max-width: 100%;
       white-space: nowrap;
-      line-height: 1.1;
-      letter-spacing: -0.015em;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
     }
     .markdown-body img {
       display: block;

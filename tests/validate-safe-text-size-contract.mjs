@@ -13,6 +13,7 @@ assert(runtimeSource.includes(String.raw`^:::size-(sm|base|lg|xl|2xl)\\s*$`), "E
 assert(runtimeSource.includes("markdown-size-inline"), "Expected inline safe text size class to be rendered.");
 assert(runtimeSource.includes("markdown-size-block"), "Expected block safe text size class to be rendered.");
 assert(runtimeSource.includes(".markdown-body .markdown-size-sm {\n      font-size: 0.68em;"), "Expected sm safe text size to use the extra-compact font scale.");
+assert(runtimeSource.includes(".table-wrap.image-grid-table tr.image-grid-meta-row .markdown-size-inline.markdown-size-sm {\n      display: inline-block;\n      font-size: 0.58em;"), "Expected image-grid metadata rows to apply an extra-small override on top of sm safe text.");
 assert(runtimeSource.includes("markdown-size-2xl"), "Expected 2xl safe text size class to be supported.");
 assert(runtimeSource.includes("protectSafeTextSizeTokens"), "Expected table parsing to preserve safe text-size tokens before splitting columns.");
 assert(runtimeSource.includes("@@UBP_SAFE_TABLE_SIZE_"), "Expected table-safe placeholders to protect safe text-size syntax inside table rows.");
