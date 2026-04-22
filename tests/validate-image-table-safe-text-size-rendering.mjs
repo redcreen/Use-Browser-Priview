@@ -182,6 +182,14 @@ assert(
   "Expected image table metadata rows to render with the safe small-text class.",
 );
 assert(
+  content.innerHTML.includes('class="table-wrap image-grid-table"'),
+  "Expected image-browser markdown tables to opt into the specialized image-grid layout.",
+);
+assert(
+  content.innerHTML.includes('class="image-grid-meta-row"'),
+  "Expected compact metadata rows under image grids to be marked for no-wrap rendering.",
+);
+assert(
   content.innerHTML.includes("3.4w赞·2101藏·V"),
   "Expected image table metadata text to be visible after rendering.",
 );

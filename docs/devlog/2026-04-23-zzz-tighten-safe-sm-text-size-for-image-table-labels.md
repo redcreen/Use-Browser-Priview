@@ -9,11 +9,11 @@ The earlier `sm` reduction still left some image-table stat lines wide enough to
 
 ## Thinking
 
-This was still a scale-choice issue, not a parser bug. The `sm` tier is used almost entirely for compact metadata, not body copy, so it should bias toward fitting dense labels into narrow grid cells. Reducing the whitelist scale again is simpler and safer than introducing another syntax tier for the same use case.
+This was partly a scale-choice issue, but not only that. The `sm` tier is used almost entirely for compact metadata, not body copy, so it can bias toward fitting dense labels into narrow grid cells. But the user-facing problem lived specifically in image-browser tables, so that layout also needed table-specific metadata-row treatment instead of relying forever on smaller global text alone.
 
 ## Solution
 
-Lowered `markdown-size-sm` again from 0.8em to 0.68em, updated the safe text-size contract so the compact scale is locked in code, and refreshed the English and Chinese usage docs to state explicitly that `sm` is an extra-compact metadata label size intended to prevent line wraps in image-table stats.
+Lowered `markdown-size-sm` again from 0.8em to 0.68em, then added a specialized image-grid table layout that detects image-browser markdown tables and renders their stats rows as compact no-wrap metadata rows with tighter padding and line-height. Updated the safe text-size contract, the image-table rendering regression, and the English/Chinese usage docs so the repo now records both the smaller `sm` tier and the dedicated image-table layout.
 
 ## Validation
 
@@ -21,8 +21,8 @@ npm test; bash install.sh; python3 /Users/redcreen/.codex/skills/project-assista
 
 ## Follow-Ups
 
-- If image-table labels still wrap after this, the next adjustment should tighten the table-cell typography or allow a dedicated metadata-specific token instead of shrinking `sm` indefinitely.
+- If image-table labels still wrap after this, prefer refining the dedicated image-grid metadata row layout before shrinking `sm` indefinitely again.
 
 ## Related Files
 
-- packages/runtime/browser-preview.js, tests/validate-safe-text-size-contract.mjs, docs/usage.md, docs/usage.zh-CN.md
+- packages/runtime/browser-preview.js, tests/validate-safe-text-size-contract.mjs, tests/validate-image-table-safe-text-size-rendering.mjs, docs/usage.md, docs/usage.zh-CN.md

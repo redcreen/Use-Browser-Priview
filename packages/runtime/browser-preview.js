@@ -1197,6 +1197,32 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       white-space: break-spaces;
       word-break: break-word;
     }
+    .markdown-body .table-wrap.image-grid-table th,
+    .markdown-body .table-wrap.image-grid-table td {
+      padding: 8px 10px;
+    }
+    .markdown-body .table-wrap.image-grid-table tr.image-grid-media-row td {
+      padding-top: 14px;
+      padding-bottom: 14px;
+    }
+    .markdown-body .table-wrap.image-grid-table tr.image-grid-media-row img {
+      margin: 0 auto;
+    }
+    .markdown-body .table-wrap.image-grid-table tr.image-grid-meta-row td {
+      white-space: nowrap;
+      overflow: hidden;
+      overflow-wrap: normal;
+      word-break: keep-all;
+      line-height: 1.15;
+      text-overflow: clip;
+    }
+    .markdown-body .table-wrap.image-grid-table tr.image-grid-meta-row .markdown-size-inline.markdown-size-sm {
+      display: inline-block;
+      max-width: 100%;
+      white-space: nowrap;
+      line-height: 1.1;
+      letter-spacing: -0.015em;
+    }
     .markdown-body img {
       display: block;
       max-width: 100%;
@@ -2031,10 +2057,57 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           .map((cell) => restoreSafeTextSizeTokens(cell, protectedRow.protectedTokens).trim());
       }
 
+      function isImageGridMediaCell(cell) {
+        const trimmed = String(cell || "").trim();
+        return Boolean(trimmed) && trimmed.includes("![") && trimmed.startsWith("[") && trimmed.endsWith(")");
+      }
+
+      function isImageGridMetaCell(cell) {
+        return /^\\[\\[size:sm\\|[\\s\\S]+\\]\\]$/i.test(String(cell || "").trim());
+      }
+
+      function classifyTableRow(cells) {
+        const nonEmptyCells = cells.filter((cell) => String(cell || "").trim());
+        if (!nonEmptyCells.length) {
+          return "";
+        }
+        if (nonEmptyCells.every(isImageGridMediaCell)) {
+          return "image-grid-media-row";
+        }
+        if (nonEmptyCells.every(isImageGridMetaCell)) {
+          return "image-grid-meta-row";
+        }
+        return "";
+      }
+
+      function isImageGridTable(headerCells, rows) {
+        if (!headerCells.every((cell) => !String(cell || "").trim())) {
+          return false;
+        }
+        let sawMediaRow = false;
+        let sawMetaRow = false;
+        for (const row of rows) {
+          const rowClass = classifyTableRow(row);
+          if (rowClass === "image-grid-media-row") {
+            sawMediaRow = true;
+          }
+          if (rowClass === "image-grid-meta-row") {
+            sawMetaRow = true;
+          }
+        }
+        return sawMediaRow && sawMetaRow;
+      }
+
       function renderTable(headerCells, rows) {
+        const imageGridTable = isImageGridTable(headerCells, rows);
         const headerHtml = "<tr>" + headerCells.map((cell) => "<th>" + renderInline(cell) + "</th>").join("") + "</tr>";
-        const bodyHtml = rows.map((row) => "<tr>" + row.map((cell) => "<td>" + renderInline(cell) + "</td>").join("") + "</tr>").join("");
-        return '<div class="table-wrap"><table><thead>' + headerHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
+        const bodyHtml = rows.map((row) => {
+          const rowClass = imageGridTable ? classifyTableRow(row) : "";
+          const rowClassAttr = rowClass ? ' class="' + rowClass + '"' : "";
+          return "<tr" + rowClassAttr + ">" + row.map((cell) => "<td>" + renderInline(cell) + "</td>").join("") + "</tr>";
+        }).join("");
+        const wrapClass = imageGridTable ? "table-wrap image-grid-table" : "table-wrap";
+        return '<div class="' + wrapClass + '"><table><thead>' + headerHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
       }
 
       for (let index = 0; index < lines.length; index += 1) {

@@ -109,6 +109,8 @@ You can mix image links and text-size tokens in the same table:
 | [[size:sm|3.4w likes · 2101 saves]] | [[size:sm|2.1w likes · 2588 saves]] |
 ```
 
+When a Markdown table is being used as an image-browser grid like `search-results.images.md`, the preview automatically switches the stats rows under those images to a compact no-wrap layout so metadata labels stay on one line more reliably.
+
 ## Troubleshooting
 
 - VS Code still shows no menu right after the first install: reopen the current VS Code / Codex window once
