@@ -33,7 +33,7 @@ preview performance hardening
 ## Development Log Capture
 - Trigger Level: high
 - Pending Capture: yes
-- Reason: commits landed after the latest devlog and changed durable repo surfaces; latest examples: perf: defer large sidebar sibling loads; fix: preserve tree layout for lazy-loaded directories
+- Reason: commits landed after the latest devlog and changed durable repo surfaces; latest examples: chore: sync roadmap and devlog surfaces; perf: defer large sidebar sibling loads
 - Last Entry: `docs/devlog/2026-04-22-support-safe-text-sizes-inside-markdown-tables.md`
 
 ## Architecture Supervision

@@ -80,7 +80,11 @@ const content = {
     return [];
   },
 };
-const sidebarBody = { innerHTML: "" };
+const sidebarBody = {
+  innerHTML: "",
+  scrollTop: 0,
+  addEventListener() {},
+};
 const sidebarToggle = {
   textContent: "",
   setAttribute() {},

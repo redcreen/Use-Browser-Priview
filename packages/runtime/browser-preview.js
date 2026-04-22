@@ -1460,6 +1460,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     const treeLoadPromises = new Map();
     const openFolders = new Set();
     const sidebarStateKey = "workspace-doc-browser.sidebar:" + workspaceName;
+    const sidebarScrollStateKey = "workspace-doc-browser.sidebar-scroll:" + workspaceName;
     const scrollStateKeyPrefix = "workspace-doc-browser.scroll:" + workspaceName + ":";
     const perfSessionId = "perf-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
     const safeTextSizeClassMap = Object.freeze({
@@ -1471,6 +1472,8 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     });
     let scrollEntryId = "";
     let scrollSaveFrame = 0;
+    let sidebarScrollSaveFrame = 0;
+    let sidebarScrollRestored = false;
 
     function escapeHtml(value) {
       return String(value || "")
@@ -2279,6 +2282,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         }
         link.dataset.bound = "1";
         link.addEventListener("click", (event) => {
+          persistSidebarScroll();
           event.stopPropagation();
           if (event.defaultPrevented) {
             return;
@@ -2288,6 +2292,15 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           }
           event.preventDefault();
           window.location.href = link.href;
+        });
+      });
+      sidebarBody.querySelectorAll(".repo-link").forEach((link) => {
+        if (link.dataset.bound === "1") {
+          return;
+        }
+        link.dataset.bound = "1";
+        link.addEventListener("click", () => {
+          persistSidebarScroll();
         });
       });
     }
@@ -2322,6 +2335,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
 
     function renderTree(force = false) {
       const startedAt = nowMs();
+      const previousScrollTop = sidebarBody ? sidebarBody.scrollTop || 0 : 0;
       const rootItems = getTreeItems("");
       if (!rootItems.length && !treeCache.has("")) {
         return;
@@ -2332,6 +2346,10 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       sidebarBody.innerHTML = renderTreeItems(rootItems);
       bindTreeInteractions();
       treeRendered = true;
+      const targetSidebarScroll = previousScrollTop > 0
+        ? previousScrollTop
+        : (sidebarScrollRestored ? previousScrollTop : loadSavedSidebarScroll());
+      restoreSidebarScroll(targetSidebarScroll);
       const durationMs = Number((nowMs() - startedAt).toFixed(2));
       if (durationMs >= 8 || sidebarBody.innerHTML.length >= 20000) {
         reportPerf("tree-render", {
@@ -2456,6 +2474,64 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       } catch {
         return false;
       }
+    }
+
+    function getSidebarScrollStorage() {
+      try {
+        return window.sessionStorage;
+      } catch {
+        return null;
+      }
+    }
+
+    function loadSavedSidebarScroll() {
+      const storage = getSidebarScrollStorage();
+      if (!storage) {
+        return 0;
+      }
+      try {
+        const raw = storage.getItem(sidebarScrollStateKey);
+        const value = Number(raw);
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    function persistSidebarScroll() {
+      const storage = getSidebarScrollStorage();
+      if (!storage || !sidebarBody) {
+        return;
+      }
+      try {
+        storage.setItem(sidebarScrollStateKey, String(Math.max(0, Math.round(sidebarBody.scrollTop || 0))));
+      } catch {}
+    }
+
+    function scheduleSidebarScrollSave() {
+      if (sidebarScrollSaveFrame) {
+        return;
+      }
+      sidebarScrollSaveFrame = window.requestAnimationFrame(() => {
+        sidebarScrollSaveFrame = 0;
+        persistSidebarScroll();
+      });
+    }
+
+    function restoreSidebarScroll(explicitScrollTop = null) {
+      if (!sidebarBody) {
+        return;
+      }
+      const targetScrollTop = explicitScrollTop === null ? loadSavedSidebarScroll() : explicitScrollTop;
+      if (!Number.isFinite(targetScrollTop) || targetScrollTop <= 0) {
+        return;
+      }
+      const apply = () => {
+        sidebarBody.scrollTop = targetScrollTop;
+      };
+      apply();
+      window.requestAnimationFrame(apply);
+      sidebarScrollRestored = true;
     }
 
     function ensureHistoryEntryId() {
@@ -2714,9 +2790,15 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     window.addEventListener("scroll", scheduleScrollPositionSave, { passive: true });
     window.addEventListener("pagehide", persistScrollPosition);
     window.addEventListener("beforeunload", persistScrollPosition);
+    if (sidebarBody && typeof sidebarBody.addEventListener === "function") {
+      sidebarBody.addEventListener("scroll", scheduleSidebarScrollSave, { passive: true });
+    }
+    window.addEventListener("pagehide", persistSidebarScroll);
+    window.addEventListener("beforeunload", persistSidebarScroll);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") {
         persistScrollPosition();
+        persistSidebarScroll();
       }
     });
     if (sidebarToggle) {

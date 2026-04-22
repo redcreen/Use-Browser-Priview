@@ -8,6 +8,7 @@
 
 ## 条目
 
+- [Preserve sidebar position during tree navigation](2026-04-22-preserve-sidebar-position-during-tree-navigation.md)
 - [Reduce preview jank on deep note pages](2026-04-22-reduce-preview-jank-on-deep-note-pages.md)
 - [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
 - [Preserve preview ports across runtime upgrades](2026-04-22-preserve-preview-ports-across-runtime-upgrades.md)

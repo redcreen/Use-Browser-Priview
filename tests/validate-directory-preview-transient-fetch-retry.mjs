@@ -42,6 +42,8 @@ const content = {
 };
 const sidebarBody = {
   innerHTML: "",
+  scrollTop: 0,
+  addEventListener() {},
   querySelectorAll() {
     return [];
   },

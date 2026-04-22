@@ -37,6 +37,7 @@ Notes:
 - Images, video, and text files render inline.
 - If a directory contains `README.md`, preview opens that README first.
 - Browser back / forward restores the previous page position inside the same preview tab.
+- Sidebar navigation keeps its scroll position when you move between nearby pages in the same workspace.
 
 ## Project Root And Port Reuse
 

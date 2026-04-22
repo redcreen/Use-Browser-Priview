@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
@@ -9,22 +8,9 @@ const repoRoot = path.resolve(path.dirname(__filename), "..");
 
 const { buildBootstrapViewerHtml } = await import(path.join(repoRoot, "packages", "runtime", "browser-preview.js"));
 
-const markdownPath = path.join(
-  repoRoot,
-  "..",
-  "style engine",
-  "workspace",
-  "sytle-images",
-  "xiaohongshu",
-  "keyword",
-  "端午",
-  "search-results.images.md",
-);
-const markdownText = fs.readFileSync(markdownPath, "utf8");
-
 const html = buildBootstrapViewerHtml(
   "style engine",
-  "workspace/sytle-images/xiaohongshu/keyword/端午/search-results.images.md",
+  "workspace/README.md",
   "markdown",
   3000,
   1200,
@@ -33,8 +19,8 @@ const match = html.match(/<script>([\s\S]*)<\/script>/);
 assert(match, "Expected bootstrap viewer HTML to include an inline script.");
 const inlineScript = match[1];
 
-function makeStorage() {
-  const data = new Map();
+function makeStorage(seed = {}) {
+  const data = new Map(Object.entries(seed));
   return {
     getItem(key) {
       return data.has(key) ? data.get(key) : null;
@@ -58,6 +44,9 @@ const sidebarBody = {
   innerHTML: "",
   scrollTop: 0,
   addEventListener() {},
+  querySelectorAll() {
+    return [];
+  },
 };
 const sidebarToggle = {
   textContent: "",
@@ -65,6 +54,10 @@ const sidebarToggle = {
   addEventListener() {},
 };
 const bodyClassSet = new Set();
+
+const sessionStorage = makeStorage({
+  "workspace-doc-browser.sidebar-scroll:style engine": "180",
+});
 
 const sandbox = {
   console,
@@ -103,10 +96,10 @@ const sandbox = {
   },
   window: {
     location: {
-      pathname: "/workspace/sytle-images/xiaohongshu/keyword/端午/search-results.images.md",
+      pathname: "/workspace/README.md",
       search: "",
       hash: "",
-      href: "http://127.0.0.1:65043/workspace/sytle-images/xiaohongshu/keyword/%E7%AB%AF%E5%8D%88/search-results.images.md",
+      href: "http://127.0.0.1:65043/workspace/README.md",
     },
     history: {
       state: {},
@@ -116,7 +109,7 @@ const sandbox = {
       scrollRestoration: "auto",
     },
     localStorage: makeStorage(),
-    sessionStorage: makeStorage(),
+    sessionStorage,
     requestAnimationFrame(callback) {
       callback();
       return 1;
@@ -134,19 +127,31 @@ const sandbox = {
     },
   },
   fetch: async (url) => {
-    if (String(url).startsWith("/__workspace_doc_browser__/tree")) {
+    if (String(url) === "/__workspace_doc_browser__/tree") {
       return {
         ok: true,
         async json() {
-          return [];
+          return [
+            { title: "workspace/", kind: "directory", path: "workspace", isSymlink: false, hasChildren: true },
+          ];
         },
       };
     }
-    if (String(url).includes("/__workspace_doc_browser__/raw/workspace/sytle-images/xiaohongshu/keyword/%E7%AB%AF%E5%8D%88/search-results.images.md")) {
+    if (String(url) === "/__workspace_doc_browser__/tree?path=workspace") {
+      return {
+        ok: true,
+        async json() {
+          return [
+            { title: "README.md", kind: "markdown", sourcePath: "workspace/README.md", isSymlink: false },
+          ];
+        },
+      };
+    }
+    if (String(url).includes("/__workspace_doc_browser__/raw/workspace/README.md")) {
       return {
         ok: true,
         async text() {
-          return markdownText;
+          return "# Test\n";
         },
       };
     }
@@ -169,21 +174,14 @@ vm.runInNewContext(inlineScript, sandbox, { timeout: 4000 });
 await new Promise((resolve) => setImmediate(resolve));
 await new Promise((resolve) => setImmediate(resolve));
 
-assert(
-  !content.innerHTML.includes("@@UBP_SAFE_TABLE_SIZE_"),
-  "Expected table-safe size placeholders to be restored before rendering.",
+assert.equal(
+  sidebarBody.scrollTop,
+  180,
+  "Expected the sidebar tree to restore its previous scroll position after rendering.",
 );
 assert(
-  !content.innerHTML.includes("@@UBP_SAFE_TEXT_SIZE_"),
-  "Expected inline safe-size placeholders to be restored before rendering.",
-);
-assert(
-  content.innerHTML.includes("markdown-size-inline markdown-size-sm"),
-  "Expected image table metadata rows to render with the safe small-text class.",
-);
-assert(
-  content.innerHTML.includes("3.4w赞·2101藏·V"),
-  "Expected image table metadata text to be visible after rendering.",
+  inlineScript.includes("workspace-doc-browser.sidebar-scroll:"),
+  "Expected the runtime to persist sidebar scroll state for cross-page navigation.",
 );
 
-console.log("validate-image-table-safe-text-size-rendering: ok");
+console.log("validate-sidebar-scroll-restoration: ok");
