@@ -8,8 +8,8 @@ const repoRoot = path.resolve(path.dirname(__filename), "..");
 const runtimeSource = fs.readFileSync(path.join(repoRoot, "packages", "runtime", "browser-preview.js"), "utf8");
 
 assert(runtimeSource.includes("safeTextSizeClassMap"), "Expected safe text size whitelist to be defined in the preview runtime.");
-assert(runtimeSource.includes("\\[\\[size:(sm|base|lg|xl|2xl)\\|"), "Expected inline safe text size syntax to be recognized.");
-assert(runtimeSource.includes("^:::size-(sm|base|lg|xl|2xl)\\s*$"), "Expected block safe text size syntax to be recognized.");
+assert(runtimeSource.includes(String.raw`\\[\\[size:(sm|base|lg|xl|2xl)\\|`), "Expected inline safe text size syntax to be recognized.");
+assert(runtimeSource.includes(String.raw`^:::size-(sm|base|lg|xl|2xl)\\s*$`), "Expected block safe text size syntax to be recognized.");
 assert(runtimeSource.includes("markdown-size-inline"), "Expected inline safe text size class to be rendered.");
 assert(runtimeSource.includes("markdown-size-block"), "Expected block safe text size class to be rendered.");
 assert(runtimeSource.includes("markdown-size-2xl"), "Expected 2xl safe text size class to be supported.");

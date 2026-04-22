@@ -1495,7 +1495,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       const inlineSizeTokens = [];
       let source = String(value || "");
       if (allowSafeTextSizes) {
-        source = source.replace(/\[\[size:(sm|base|lg|xl|2xl)\|([\s\S]+?)\]\]/gi, (_, sizeToken, content) => {
+        source = source.replace(/\\[\\[size:(sm|base|lg|xl|2xl)\\|([\\s\\S]+?)\\]\\]/gi, (_, sizeToken, content) => {
           const sizeClass = getSafeTextSizeClass(sizeToken);
           if (!sizeClass) {
             return _;
@@ -1529,7 +1529,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
 
     function protectSafeTextSizeTokens(value) {
       const protectedTokens = [];
-      const protectedValue = String(value || "").replace(/\[\[size:(sm|base|lg|xl|2xl)\|([\s\S]+?)\]\]/gi, (match) => {
+      const protectedValue = String(value || "").replace(/\\[\\[size:(sm|base|lg|xl|2xl)\\|([\\s\\S]+?)\\]\\]/gi, (match) => {
         const tokenId = protectedTokens.length;
         protectedTokens.push(match);
         return "@@UBP_SAFE_TABLE_SIZE_" + tokenId + "@@";
@@ -1691,18 +1691,18 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           flushList();
           continue;
         }
-        const sizeBlock = line.match(/^:::size-(sm|base|lg|xl|2xl)\s*$/i);
+        const sizeBlock = line.match(/^:::size-(sm|base|lg|xl|2xl)\\s*$/i);
         if (sizeBlock) {
           flushParagraph();
           flushList();
           const sizeClass = getSafeTextSizeClass(sizeBlock[1]);
           const blockLines = [];
           let closingIndex = index + 1;
-          while (closingIndex < lines.length && !/^:::\s*$/.test(lines[closingIndex])) {
+          while (closingIndex < lines.length && !/^:::\\s*$/.test(lines[closingIndex])) {
             blockLines.push(lines[closingIndex]);
             closingIndex += 1;
           }
-          if (closingIndex < lines.length && /^:::\s*$/.test(lines[closingIndex]) && sizeClass) {
+          if (closingIndex < lines.length && /^:::\\s*$/.test(lines[closingIndex]) && sizeClass) {
             output.push('<div class="markdown-size-block ' + sizeClass + '">' + renderMarkdown(blockLines.join("\\n")) + "</div>");
             index = closingIndex;
             continue;
