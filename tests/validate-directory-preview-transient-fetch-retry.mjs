@@ -183,5 +183,13 @@ assert(
   !content.innerHTML.includes("Unable to load file preview"),
   "Expected transient fetch failures to recover without rendering a fatal preview error.",
 );
+assert(
+  sidebarBody.innerHTML.includes("tree-directory-link"),
+  "Expected expandable directories in the sidebar tree to render as clickable links.",
+);
+assert(
+  sidebarBody.innerHTML.includes("/workspace/sytle-images/xiaohongshu/keyword/%E7%AB%AF%E5%8D%88/"),
+  "Expected directory entries like 端午/ to expose a navigable preview URL in the sidebar tree.",
+);
 
 console.log("validate-directory-preview-transient-fetch-retry: ok");

@@ -851,6 +851,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       font-weight: 600;
       background: rgba(9, 105, 218, 0.08);
     }
+    .tree-directory-link {
+      color: inherit;
+      text-decoration: none;
+    }
+    .tree-directory-link:hover {
+      text-decoration: underline;
+    }
     .tree a {
       display: block;
       padding: 7px 16px;
@@ -2015,12 +2022,30 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           }
         });
       });
+      sidebarBody.querySelectorAll(".tree-directory-link").forEach((link) => {
+        if (link.dataset.bound === "1") {
+          return;
+        }
+        link.dataset.bound = "1";
+        link.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (event.defaultPrevented) {
+            return;
+          }
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+            return;
+          }
+          event.preventDefault();
+          window.location.href = link.href;
+        });
+      });
     }
 
     function renderTreeItems(items) {
       return "<ul class=\\"tree\\">" + items.map((item) => {
         if (item.kind === "directory") {
           const directoryPath = normalizeTreePath(item.path);
+          const href = previewHref(directoryPath, "directory");
           const isActiveDirectory = currentResourceKind === "directory" && normalizeTreePath(relativePath) === directoryPath;
           const shouldOpen = isActiveDirectory || openFolders.has(directoryPath) || (directoryPath && normalizeTreePath(relativePath).startsWith(directoryPath + "/"));
           const childItems = getTreeItems(directoryPath);
@@ -2029,7 +2054,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
               ? renderTreeItems(childItems)
               : (item.hasChildren ? renderTreeLoadingState() : ""))
             : "";
-          return "<li><details data-path=\\"" + escapeHtml(directoryPath) + "\\" " + (shouldOpen ? "open" : "") + "><summary class=\\"" + (isActiveDirectory ? "active" : "") + "\\">" + escapeHtml(item.title) + "</summary>" + childMarkup + "</details></li>";
+          return "<li><details data-path=\\"" + escapeHtml(directoryPath) + "\\" " + (shouldOpen ? "open" : "") + "><summary class=\\"" + (isActiveDirectory ? "active" : "") + "\\"><a class=\\"tree-directory-link\\" href=\\"" + escapeHtml(href) + "\\">" + escapeHtml(item.title) + "</a></summary>" + childMarkup + "</details></li>";
         }
         const active = currentResourceKind !== "directory" && item.sourcePath === relativePath ? " active" : "";
         let href = rawFileHref(item.sourcePath || "");
