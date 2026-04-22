@@ -214,7 +214,7 @@ function getTargetUrl(baseUrl, workspaceRoot, targetPath) {
   return new URL(encodePathSegments(descriptor.relativePath), `${String(baseUrl || "").replace(/\/$/, "")}/`).toString();
 }
 
-function findFreePort() {
+function allocateEphemeralPort() {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
     server.unref();
@@ -260,6 +260,29 @@ function waitForPortReady(port, attempts = 120, delayMs = 100) {
   });
 }
 
+function waitForPortReleased(port, attempts = 120, delayMs = 100) {
+  return new Promise((resolve, reject) => {
+    let remaining = attempts;
+
+    const tryCheck = () => {
+      isPortReachable(port).then((reachable) => {
+        if (!reachable) {
+          resolve();
+          return;
+        }
+        remaining -= 1;
+        if (remaining <= 0) {
+          reject(new Error(`Timed out waiting for local docs server on port ${port} to stop.`));
+          return;
+        }
+        setTimeout(tryCheck, delayMs);
+      }).catch(reject);
+    };
+
+    tryCheck();
+  });
+}
+
 function isPortReachable(port, host = "127.0.0.1") {
   return new Promise((resolve) => {
     const socket = net.createConnection({ port, host });
@@ -270,6 +293,44 @@ function isPortReachable(port, host = "127.0.0.1") {
     socket.once("connect", () => finish(true));
     socket.once("error", () => finish(false));
   });
+}
+
+function canBindPort(port) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on("error", (error) => {
+      if (error && error.code === "EADDRINUSE") {
+        resolve(false);
+        return;
+      }
+      reject(error);
+    });
+    server.listen(port, "127.0.0.1", () => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(true);
+        }
+      });
+    });
+  });
+}
+
+async function findFreePort(preferredPort = null) {
+  const preferred = Number(preferredPort);
+  if (Number.isInteger(preferred) && preferred > 0) {
+    try {
+      await waitForPortReleased(preferred);
+    } catch {}
+    try {
+      if (await canBindPort(preferred)) {
+        return preferred;
+      }
+    } catch {}
+  }
+  return allocateEphemeralPort();
 }
 
 function ensureSessionDir() {
@@ -433,7 +494,7 @@ async function ensureSession(workspaceRoot, buildRawFileServerScript, codeStamp)
     };
   }
 
-  const port = await findFreePort();
+  const port = await findFreePort(sharedLookup.preferredPort);
   const rawServerScript = buildRawFileServerScript(sharedLookup.requestedRoot, port);
   const child = cp.spawn(process.execPath, ["-e", rawServerScript], {
     cwd: sharedLookup.requestedRoot,

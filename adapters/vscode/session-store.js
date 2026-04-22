@@ -58,6 +58,10 @@ function isSameOrChildPath(parentPath, childPath) {
   return normalizedChild === normalizedParent || normalizedChild.startsWith(`${normalizedParent}${path.sep}`);
 }
 
+function isBetterRootMatch(currentRoot, nextRoot) {
+  return !currentRoot || String(nextRoot || "").length > String(currentRoot || "").length;
+}
+
 async function resolveReusableSessionRecord(sessionMap, options) {
   const requestedRoot = canonicalPath(options && options.requestedRoot);
   const codeStamp = String(options && options.codeStamp || "");
@@ -66,10 +70,17 @@ async function resolveReusableSessionRecord(sessionMap, options) {
   const nextSessionMap = { ...(sessionMap || {}) };
   let changed = false;
   let bestReusableSession = null;
+  let preferredPort = null;
+  let preferredPortRoot = "";
 
   for (const [sessionKey, stored] of Object.entries(nextSessionMap)) {
     const storedRoot = getSessionRootRealPath(stored, sessionKey);
+    const isMatchingRoot = isSameOrChildPath(storedRoot, requestedRoot);
     if (getSessionCodeStamp(stored) !== codeStamp) {
+      if (isMatchingRoot && stored && stored.port && isBetterRootMatch(preferredPortRoot, storedRoot)) {
+        preferredPort = stored.port;
+        preferredPortRoot = storedRoot;
+      }
       if (safeKill) {
         safeKill(stored && stored.pid);
       }
@@ -78,6 +89,10 @@ async function resolveReusableSessionRecord(sessionMap, options) {
       continue;
     }
     if (!stored || !stored.port || !(await isPortReachable(stored.port))) {
+      if (isMatchingRoot && stored && stored.port && isBetterRootMatch(preferredPortRoot, storedRoot)) {
+        preferredPort = stored.port;
+        preferredPortRoot = storedRoot;
+      }
       if (safeKill) {
         safeKill(stored && stored.pid);
       }
@@ -86,7 +101,7 @@ async function resolveReusableSessionRecord(sessionMap, options) {
       continue;
     }
     if (
-      isSameOrChildPath(storedRoot, requestedRoot) &&
+      isMatchingRoot &&
       (!bestReusableSession || storedRoot.length > getSessionRootRealPath(bestReusableSession).length)
     ) {
       bestReusableSession = {
@@ -102,6 +117,7 @@ async function resolveReusableSessionRecord(sessionMap, options) {
     requestedRoot,
     sessions: nextSessionMap,
     bestReusableSession,
+    preferredPort,
   };
 }
 

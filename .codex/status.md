@@ -3,7 +3,7 @@
 ## Delivery Tier
 - Tier: `medium`
 - Why this tier: multi-session maintenance needs a lightweight but durable control surface
-- Last reviewed: 2026-04-21
+- Last reviewed: 2026-04-22
 
 ## Current Phase
 
@@ -34,13 +34,13 @@ standalone baseline release closeout
 - Trigger Level: high
 - Pending Capture: no
 - Reason: latest devlog already captures the most recent durable reasoning
-- Last Entry: `docs/devlog/2026-04-21-harden-codex-app-patch-workflow.md`
+- Last Entry: `docs/devlog/2026-04-22-preserve-preview-ports-across-runtime-upgrades.md`
 
 ## Architecture Supervision
 - Signal: `green`
-- Signal Basis: install surfaces, rollback paths, release docs, and validation gates are now encoded in repo files rather than left to ad-hoc session memory
-- Root Cause Hypothesis: future host updates can still change bundle shape, but the repo now contains a stable patch playbook, clone-first validation path, and rollback contract
-- Correct Layer: adapter isolation, staged app-bundle swap, durable docs, and release validation
+- Signal Basis: install surfaces, rollback paths, release docs, validation gates, and same-root port reuse rules are now encoded in repo files rather than left to ad-hoc session memory
+- Root Cause Hypothesis: future host updates can still change bundle shape, and preview runtime changes can accidentally allocate a new port for the same project root if this rule is not enforced explicitly
+- Correct Layer: adapter isolation, staged app-bundle swap, durable docs, release validation, and shared session governance
 - Automatic Review Trigger: no automatic trigger is currently active
 - Escalation Gate: continue automatically
 
@@ -59,12 +59,13 @@ standalone baseline release closeout
 ## In Progress
 
 shared runtime extraction planning
+same-project-root port preservation across runtime upgrades
 
 ## Blockers / Open Decisions
 
 None.
 
 ## Next 3 Actions
-1. Start shared runtime extraction without regressing the current release baseline.
-2. Keep Codex / Finder / VS Code install paths green after host updates.
-3. Only reopen packaging work when the next release materially changes the install surface.
+1. Preserve the same preview port for the same project root even when the runtime code changes.
+2. Start shared runtime extraction without regressing the current release baseline.
+3. Keep Codex / Finder / VS Code install paths green after host updates.

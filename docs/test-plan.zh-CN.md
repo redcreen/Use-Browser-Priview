@@ -8,7 +8,7 @@
 
 - 目录、Markdown、图片、视频、raw 文件等预览行为是否一致
 - Finder 和编辑器两个入口是否真的进入同一套预览模型
-- 同一 workspace 的端口复用是否稳定，是否会悄悄堆出旧进程
+- 同一 workspace 的端口复用是否稳定，是否能在升级后继续保持同一个端口且不悄悄堆出旧进程
 
 ## 验收用例
 
@@ -23,6 +23,7 @@
 | 安装 Codex app patch | macOS，已安装 Codex 桌面 app | 执行 `bash install.sh --codex-app`，彻底退出并重开 Codex，然后在 Codex 里对文件链接右键 | `Open With` 里出现 `Use Browser Priview`，且不影响普通 VS Code / Finder 安装路径 |
 | 回滚 Codex app patch | macOS，已安装 Codex app patch | 执行 `bash adapters/codex-app/uninstall-codex-app.sh`，然后彻底退出并重开 Codex | Codex 回到 clean backup bundle，并且不再带 patch 启动 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
+| 代码升级后的端口复用 | 同一个项目根已经占用一个预览端口 | 升级运行时代码后，再从 Finder 或 VS Code / Codex 打开同一个仓库 | 先停掉旧进程，再在可回收时继续使用原端口，不悄悄换成新端口 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | 目录 README 默认落点 | 目录内存在 `README.md` | 从 Finder、VS Code / Codex，或浏览器内目录链接打开该目录 | 直接落到同目录的 `README.md`，不先停在目录列表页 |
 | Markdown 尖括号链接目标 | Markdown 中存在 `[标题](<../../path/to/file.md>)` 或带 `&` 查询参数的外链 | 点击链接 | 相对路径正常解析，不残留 `&gt;` / `&amp;` 这类 HTML 实体 |
@@ -54,6 +55,7 @@
 - HTML 预览约束：`node tests/validate-html-preview-contract.mjs`
 - 目录 README 默认落点约束：`node tests/validate-directory-readme-default.mjs`
 - Markdown 链接目标归一化约束：`node tests/validate-markdown-link-href-normalization-contract.mjs`
+- 代码升级后端口复用约束：`node tests/validate-port-reuse-after-upgrade.mjs`
 - 前进后退位置恢复约束：`node tests/validate-scroll-restoration-contract.mjs`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`
 - Codex 桌面 patch 约束：`node tests/validate-codex-app-patch.mjs`
@@ -85,4 +87,5 @@
 - `bash install.sh --codex-app` 能单独 patch Codex app，而不改变普通 VS Code / Finder 安装语义
 - Codex patch 安装同时要保留 clean backup bundle，卸载时能从这份 backup 恢复
 - Finder 和 VS Code / Codex 对同一个项目根会复用同一个端口
+- 同一个项目根在代码升级后，只要旧端口可回收，就继续使用原端口
 - 上面的核心验收用例在一台新机器上通过

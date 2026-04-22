@@ -8,7 +8,7 @@ This project is risky in three places:
 
 - browser preview correctness across directories, Markdown, images, video, and raw-file fetches
 - entry-point consistency across Finder and editor adapters
-- session reuse correctness so the same workspace tends to keep the same port and does not silently accumulate stale servers
+- session reuse correctness so the same workspace keeps the same port and does not silently accumulate stale servers
 
 ## Acceptance Cases
 | Case | Setup | Action | Expected Result |
@@ -22,6 +22,7 @@ This project is risky in three places:
 | Codex app patch install | macOS, Codex desktop app installed | Run `bash install.sh --codex-app`, fully quit Codex, reopen it, then right-click a file link inside Codex | `Open With` contains `Use Browser Priview` without affecting the normal VS Code / Finder install paths |
 | Codex app patch rollback | macOS, Codex app patch already installed | Run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex | Codex returns to the clean backup bundle and starts without the patch |
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
+| Port reuse after runtime upgrade | The same project root already has a preview session on one port | Upgrade the runtime code, then open the same repo again from Finder or VS Code / Codex | The old preview process is stopped, the original port is reclaimed when available, and the repo stays on the same port |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Directory README default landing | The directory contains `README.md` | Open that directory from Finder, VS Code / Codex, or an in-browser directory link | Preview lands on the directory `README.md` instead of stopping on the directory listing first |
 | Markdown angle-bracket link targets | Markdown contains `[title](<../../path/to/file.md>)` or an external link with `&` query params | Click the link | Relative targets resolve correctly and the resulting href does not leak `&gt;` / `&amp;` entities |
@@ -53,6 +54,7 @@ This project is risky in three places:
 - HTML preview contract via `node tests/validate-html-preview-contract.mjs`
 - directory README default contract via `node tests/validate-directory-readme-default.mjs`
 - markdown link href normalization contract via `node tests/validate-markdown-link-href-normalization-contract.mjs`
+- port reuse after upgrade contract via `node tests/validate-port-reuse-after-upgrade.mjs`
 - back / forward position restore contract via `node tests/validate-scroll-restoration-contract.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 - Codex desktop patch contract via `node tests/validate-codex-app-patch.mjs`
@@ -84,4 +86,5 @@ This project is risky in three places:
 - `bash install.sh --codex-app` patches Codex app without changing the normal VS Code / Finder install semantics
 - Codex patch install also preserves a clean backup bundle and uninstall restores from that backup
 - Finder and VS Code / Codex reuse the same port for the same project root
+- the same project root keeps the same port across runtime upgrades when that port can be reclaimed
 - core acceptance cases above pass on a fresh machine

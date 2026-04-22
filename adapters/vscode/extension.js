@@ -113,7 +113,7 @@ class WorkspaceDocBrowser {
 
   async restorePersistedSession(workspaceRoot) {
     if (!workspaceRoot) {
-      return null;
+      return { session: null, preferredPort: null };
     }
     const sharedLookup = await resolveReusableSessionRecord(loadSharedSessions(), {
       requestedRoot: workspaceRoot,
@@ -145,11 +145,17 @@ class WorkspaceDocBrowser {
       this.session = session;
       this.output.appendLine(`[restore] ${workspaceRoot} -> ${session.baseUrl}`);
       await this.persistSession(session);
-      return session;
+      return {
+        session,
+        preferredPort: sharedLookup.preferredPort,
+      };
     }
     const stored = this.context.globalState.get(this.getSessionStateKey(workspaceRoot));
     if (!stored || !stored.port) {
-      return null;
+      return {
+        session: null,
+        preferredPort: sharedLookup.preferredPort,
+      };
     }
     if (stored.serverCodeStamp !== this.serverCodeStamp) {
       if (stored.pid) {
@@ -158,12 +164,18 @@ class WorkspaceDocBrowser {
         } catch {}
       }
       await this.clearPersistedSession(workspaceRoot);
-      return null;
+      return {
+        session: null,
+        preferredPort: sharedLookup.preferredPort || stored.port || null,
+      };
     }
     const reachable = await isPortReachable(stored.port);
     if (!reachable) {
       await this.clearPersistedSession(workspaceRoot);
-      return null;
+      return {
+        session: null,
+        preferredPort: sharedLookup.preferredPort || stored.port || null,
+      };
     }
     const session = {
       workspaceRoot,
@@ -178,7 +190,10 @@ class WorkspaceDocBrowser {
     this.session = session;
     this.output.appendLine(`[restore] ${workspaceRoot} -> ${session.baseUrl}`);
     await this.persistSession(session);
-    return session;
+    return {
+      session,
+      preferredPort: sharedLookup.preferredPort || stored.port || null,
+    };
   }
 
   normalizeTargetUri(targetUri) {
@@ -360,11 +375,11 @@ class WorkspaceDocBrowser {
     return true;
   }
 
-  async startSession(workspaceRoot, targetUri) {
+  async startSession(workspaceRoot, targetUri, options = {}) {
     this.setPendingOpen(workspaceRoot, `Starting browser preview for ${path.basename(workspaceRoot)}...`, "start");
 
     try {
-      const port = await findFreePort();
+      const port = await findFreePort(options.preferredPort);
       await this.disposeSession();
 
       const baseUrl = `http://127.0.0.1:${port}/`;
@@ -450,8 +465,11 @@ class WorkspaceDocBrowser {
       this.isSessionReusableForWorkspace(this.session, workspaceRoot) ? "open" : "start",
     );
 
+    let preferredPort = null;
+
     if (!this.isSessionReusableForWorkspace(this.session, workspaceRoot)) {
-      await this.restorePersistedSession(workspaceRoot);
+      const restored = await this.restorePersistedSession(workspaceRoot);
+      preferredPort = restored && restored.preferredPort ? restored.preferredPort : null;
     }
 
     if (this.isSessionReusableForWorkspace(this.session, workspaceRoot)) {
@@ -459,7 +477,7 @@ class WorkspaceDocBrowser {
       return;
     }
 
-    await this.startSession(workspaceRoot, targetUri);
+    await this.startSession(workspaceRoot, targetUri, { preferredPort });
   }
 
   isSessionAlive(session = this.session) {
@@ -2542,7 +2560,7 @@ function waitForPortReady(port, attempts = 40, delayMs = 150) {
   });
 }
 
-function findFreePort() {
+function allocateEphemeralPort() {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
     server.unref();
@@ -2560,6 +2578,29 @@ function findFreePort() {
         }
       });
     });
+  });
+}
+
+function waitForPortReleased(port, attempts = 120, delayMs = 100) {
+  return new Promise((resolve, reject) => {
+    let remaining = attempts;
+
+    const tryCheck = () => {
+      isPortReachable(port).then((reachable) => {
+        if (!reachable) {
+          resolve();
+          return;
+        }
+        remaining -= 1;
+        if (remaining <= 0) {
+          reject(new Error(`Timed out waiting for local docs server on port ${port} to stop.`));
+          return;
+        }
+        setTimeout(tryCheck, delayMs);
+      }).catch(reject);
+    };
+
+    tryCheck();
   });
 }
 
@@ -2582,6 +2623,44 @@ function isPortReachable(port, host = "127.0.0.1") {
     socket.once("connect", () => finish(true));
     socket.once("error", () => finish(false));
   });
+}
+
+function canBindPort(port) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on("error", (error) => {
+      if (error && error.code === "EADDRINUSE") {
+        resolve(false);
+        return;
+      }
+      reject(error);
+    });
+    server.listen(port, "127.0.0.1", () => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(true);
+        }
+      });
+    });
+  });
+}
+
+async function findFreePort(preferredPort = null) {
+  const preferred = Number(preferredPort);
+  if (Number.isInteger(preferred) && preferred > 0) {
+    try {
+      await waitForPortReleased(preferred);
+    } catch {}
+    try {
+      if (await canBindPort(preferred)) {
+        return preferred;
+      }
+    } catch {}
+  }
+  return allocateEphemeralPort();
 }
 
 function activate(context) {

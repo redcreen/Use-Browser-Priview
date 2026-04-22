@@ -31,8 +31,8 @@ bash install.sh
 - if a directory contains `README.md`, preview opens that README first
 - browser back / forward restores the previous page position
 - image, video, and text preview
-- local session reuse so the same workspace tends to keep the same port
-- the same project root reuses one local preview port across Finder and VS Code / Codex when possible
+- local session reuse so the same workspace keeps the same port
+- the same project root keeps one local preview port across Finder, VS Code / Codex, and runtime upgrades whenever the old port can be reclaimed
 
 ## Requirements
 
@@ -200,6 +200,7 @@ Port reuse follows the project root, not the folder you clicked:
 - if no such marker exists, the selected folder itself becomes the root
 - open `repo/docs/a/` and then `repo/docs/`: same port
 - open `repo/docs/a/` and then `repo/`: same port
+- update the runtime and open the same repo again: same port, as long as the old port can be reclaimed
 - open `repo/docs/a/` and then a folder outside that repo: different port
 - when a directory contains `README.md`, preview lands on that README instead of stopping on the directory listing first
 

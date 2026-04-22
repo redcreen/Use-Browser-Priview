@@ -3,7 +3,7 @@
 ## Delivery Tier
 - Tier: `medium`
 - Why this tier: multi-session maintenance needs a lightweight but durable control surface
-- Last reviewed: TODO
+- Last reviewed: 2026-04-22
 
 ## Outcome
 
@@ -27,6 +27,7 @@ Create a standalone Use Browser Priview product that can launch the same browser
 - preserve current working behavior where possible instead of redesigning the renderer
 - the first standalone cut must still work on macOS locally
 - the new repo must be able to install itself without depending on the old repo at runtime
+- the same project root must keep one preview port across Finder, VS Code / Codex, and runtime upgrades whenever the old port can be reclaimed
 
 ## Definition of Done
 

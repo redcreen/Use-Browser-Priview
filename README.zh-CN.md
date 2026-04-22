@@ -31,8 +31,8 @@ bash install.sh
 - 目录里如果有 `README.md`，默认先打开这个 README
 - 浏览器前进 / 后退时，尽量恢复之前的页面位置
 - 图片、视频、文本预览
-- 同一 workspace 尽量复用同一个本地端口
-- 同一个项目根在 Finder 和 VS Code / Codex 之间尽量复用同一个本地预览端口
+- 同一 workspace 会尽量保持同一个本地端口
+- 同一个项目根在 Finder、VS Code / Codex 之间，以及运行时代码升级后，都会优先继续使用同一个本地预览端口；只有原端口无法回收时才换端口
 
 ## 环境要求
 
@@ -200,6 +200,7 @@ bash adapters/codex-app/uninstall-codex-app.sh
 - 如果一路往上都没有这些标记，就把当前选中的目录本身当作根
 - 先开 `repo/docs/a/`，再开 `repo/docs/`：同一个端口
 - 先开 `repo/docs/a/`，再开 `repo/`：同一个端口
+- 代码升级后再打开同一个仓库：优先还是同一个端口，只要旧端口能被回收
 - 先开 `repo/docs/a/`，再开仓库外的别的目录：不同端口
 - 目录里有 `README.md` 时，会默认落到这个 README，而不是先停在目录列表页
 

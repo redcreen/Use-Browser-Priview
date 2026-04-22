@@ -26,6 +26,13 @@ async function main() {
       workspaceRootRealPath: parentRoot,
       port: 43111,
       pid: 101,
+      codeStamp: "old-stamp",
+    },
+    [path.join(path.sep, "tmp", "demo-repo", "docs", "archive")]: {
+      workspaceRoot: path.join(path.sep, "tmp", "demo-repo", "docs", "archive"),
+      workspaceRootRealPath: path.join(path.sep, "tmp", "demo-repo", "docs", "archive"),
+      port: 43113,
+      pid: 104,
       codeStamp,
     },
     [childRoot]: {
@@ -57,8 +64,9 @@ async function main() {
 
   assert.equal(resolved.bestReusableSession.workspaceRoot, childRoot, "Expected the closest matching project root to win.");
   assert.equal(resolved.bestReusableSession.port, 43112, "Expected to reuse the closer child-root session.");
+  assert.equal(resolved.preferredPort, 43111, "Expected stale matching sessions to donate their port for reuse.");
   assert.equal(resolved.changed, true, "Expected stale sessions to be pruned.");
-  assert.deepEqual(killedPids, [103], "Expected only stale mismatched sessions to be terminated.");
+  assert.deepEqual(killedPids, [101, 104, 103], "Expected stale or unreachable sessions to be terminated.");
 
   const stored = storeSessionRecord({}, {
     workspaceRoot: parentRoot,
