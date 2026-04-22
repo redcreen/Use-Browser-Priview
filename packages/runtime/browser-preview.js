@@ -2312,8 +2312,9 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           const directoryPath = normalizeTreePath(item.path);
           const href = previewHref(directoryPath, "directory");
           const isActiveDirectory = currentResourceKind === "directory" && normalizeTreePath(relativePath) === directoryPath;
-          const branchOnly = !openFolders.has(directoryPath) && isPathOnCurrentBranch(directoryPath) && directoryPath !== getCurrentDirectoryPath();
-          const shouldOpen = isActiveDirectory || openFolders.has(directoryPath) || branchOnly;
+          const isCurrentFileDirectory = currentResourceKind !== "directory" && directoryPath === getCurrentDirectoryPath();
+          const branchOnly = !openFolders.has(directoryPath) && isPathOnCurrentBranch(directoryPath) && !isCurrentFileDirectory;
+          const shouldOpen = isActiveDirectory || isCurrentFileDirectory || openFolders.has(directoryPath) || branchOnly;
           const childItems = getTreeItems(directoryPath);
           const childMarkup = shouldOpen
             ? (childItems.length

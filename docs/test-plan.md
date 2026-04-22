@@ -25,6 +25,7 @@ This project is risky in three places:
 | Port reuse after runtime upgrade | The same project root already has a preview session on one port | Upgrade the runtime code, then open the same repo again from Finder or VS Code / Codex | The old preview process is stopped, the original port is reclaimed when available, and the repo stays on the same port |
 | VS Code runtime hot update without host restart | The adapter is already active in one VS Code / Codex window | Change preview runtime code on disk, then trigger `Use Browser Priview` again without restarting the Extension Host | The next preview action uses the latest runtime code and the host process stays running |
 | Large active-path directory | Current page lives inside a directory with hundreds of sibling folders | Open the page and inspect the sidebar tree | The active branch stays visible, but the huge sibling list is deferred until the user manually expands that directory |
+| Current file directory auto expansion | Browser opens directly on a file such as `docs/architecture.zh-CN.md` | Inspect the sidebar tree immediately after the page loads | The current file's parent directory auto-expands so the active file stays visible without an extra manual click |
 | Sidebar tree navigation stability | The preview is already scrolled down inside a long sidebar tree | Click another nearby file or directory in the sidebar | The sidebar stays near its previous scroll position instead of jumping back to the top |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Directory README default landing | The directory contains `README.md` | Open that directory from Finder, VS Code / Codex, or an in-browser directory link | Preview lands on the directory `README.md` instead of stopping on the directory listing first |
@@ -67,6 +68,7 @@ This project is risky in three places:
 - port reuse after upgrade contract via `node tests/validate-port-reuse-after-upgrade.mjs`
 - safe Markdown text-size contract via `node tests/validate-safe-text-size-contract.mjs`
 - focused large-directory tree loading via `node tests/validate-focused-tree-loading.mjs`
+- current file directory auto expansion via `node tests/validate-current-directory-auto-expansion.mjs`
 - preview perf log endpoint via `node tests/validate-preview-perf-log-contract.mjs`
 - sidebar scroll restoration via `node tests/validate-sidebar-scroll-restoration.mjs`
 - back / forward position restore contract via `node tests/validate-scroll-restoration-contract.mjs`

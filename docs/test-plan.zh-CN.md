@@ -26,6 +26,7 @@
 | 代码升级后的端口复用 | 同一个项目根已经占用一个预览端口 | 升级运行时代码后，再从 Finder 或 VS Code / Codex 打开同一个仓库 | 先停掉旧进程，再在可回收时继续使用原端口，不悄悄换成新端口 |
 | VS Code 运行时热更新且不重启宿主 | 同一个 VS Code / Codex 窗口里 adapter 已经激活 | 修改磁盘上的预览运行时代码，不重启 Extension Host，再次触发 `Use Browser Priview` | 下一次预览动作直接使用最新 runtime，宿主进程保持不重启 |
 | 大目录激活路径 | 当前页面位于一个包含数百个同级目录的大目录树中 | 打开该页面并观察左侧树 | 首屏只保证激活路径可见，不一次性展开完整同级目录；手动展开后才加载完整列表 |
+| 当前文件所在目录自动展开 | 浏览器直接打开类似 `docs/architecture.zh-CN.md` 这样的文件页 | 页面加载后立刻观察左侧树 | 当前文件的父目录会自动展开，活动文件不需要再手动点开目录才能看到 |
 | 左侧树导航稳定性 | 左侧树已经滚动到较深位置 | 在左侧再点击附近的文件或目录 | 侧栏保持在原来的滚动区域附近，而不是每次跳回顶部 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | 目录 README 默认落点 | 目录内存在 `README.md` | 从 Finder、VS Code / Codex，或浏览器内目录链接打开该目录 | 直接落到同目录的 `README.md`，不先停在目录列表页 |
@@ -68,6 +69,7 @@
 - 代码升级后端口复用约束：`node tests/validate-port-reuse-after-upgrade.mjs`
 - 安全 Markdown 字号约束：`node tests/validate-safe-text-size-contract.mjs`
 - 大目录激活路径按需加载约束：`node tests/validate-focused-tree-loading.mjs`
+- 当前文件所在目录自动展开约束：`node tests/validate-current-directory-auto-expansion.mjs`
 - 预览性能日志入口约束：`node tests/validate-preview-perf-log-contract.mjs`
 - 左侧树滚动位置恢复约束：`node tests/validate-sidebar-scroll-restoration.mjs`
 - 前进后退位置恢复约束：`node tests/validate-scroll-restoration-contract.mjs`

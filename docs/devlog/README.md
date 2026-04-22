@@ -9,6 +9,7 @@ This directory records durable implementation narratives: what went wrong, what 
 ## Entries
 
 - [Retry sidebar scroll restoration after tree growth](2026-04-23-retry-sidebar-scroll-restoration-after-tree-growth.md)
+- [Auto-expand current file directories in the preview tree](2026-04-23-auto-expand-current-file-directories-in-the-preview-tree.md)
 - [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
 - [Reduce preview jank on deep note pages](2026-04-22-reduce-preview-jank-on-deep-note-pages.md)
 - [Preserve sidebar position during tree navigation](2026-04-22-preserve-sidebar-position-during-tree-navigation.md)
