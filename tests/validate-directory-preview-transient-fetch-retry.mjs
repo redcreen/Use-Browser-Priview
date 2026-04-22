@@ -62,9 +62,9 @@ function getAttempt(key) {
 
 const responses = new Map([
   ["/__workspace_doc_browser__/tree", [{ title: "workspace/", kind: "directory", path: "workspace", isSymlink: false, hasChildren: true }]],
-  ["/__workspace_doc_browser__/tree?path=workspace", [{ title: "sytle-images/", kind: "directory", path: "workspace/sytle-images", isSymlink: false, hasChildren: true }]],
-  ["/__workspace_doc_browser__/tree?path=workspace%2Fsytle-images", [{ title: "xiaohongshu/", kind: "directory", path: "workspace/sytle-images/xiaohongshu", isSymlink: false, hasChildren: true }]],
-  ["/__workspace_doc_browser__/tree?path=workspace%2Fsytle-images%2Fxiaohongshu", [{ title: "keyword/", kind: "directory", path: "workspace/sytle-images/xiaohongshu/keyword", isSymlink: false, hasChildren: true }]],
+  ["/__workspace_doc_browser__/tree?path=workspace&mode=branch&focusChild=workspace%2Fsytle-images", [{ title: "sytle-images/", kind: "directory", path: "workspace/sytle-images", isSymlink: false, hasChildren: true }]],
+  ["/__workspace_doc_browser__/tree?path=workspace%2Fsytle-images&mode=branch&focusChild=workspace%2Fsytle-images%2Fxiaohongshu", [{ title: "xiaohongshu/", kind: "directory", path: "workspace/sytle-images/xiaohongshu", isSymlink: false, hasChildren: true }]],
+  ["/__workspace_doc_browser__/tree?path=workspace%2Fsytle-images%2Fxiaohongshu&mode=branch&focusChild=workspace%2Fsytle-images%2Fxiaohongshu%2Fkeyword", [{ title: "keyword/", kind: "directory", path: "workspace/sytle-images/xiaohongshu/keyword", isSymlink: false, hasChildren: true }]],
   ["/__workspace_doc_browser__/tree?path=workspace%2Fsytle-images%2Fxiaohongshu%2Fkeyword", [
     { title: "宋锦/", kind: "directory", path: "workspace/sytle-images/xiaohongshu/keyword/宋锦", isSymlink: false, hasChildren: true },
     { title: "端午/", kind: "directory", path: "workspace/sytle-images/xiaohongshu/keyword/端午", isSymlink: false, hasChildren: true },
@@ -132,6 +132,11 @@ const sandbox = {
     scrollY: 0,
     pageXOffset: 0,
     pageYOffset: 0,
+  },
+  navigator: {
+    sendBeacon() {
+      return true;
+    },
   },
   fetch: async (url) => {
     const key = String(url);

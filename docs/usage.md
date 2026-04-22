@@ -48,6 +48,15 @@ Port reuse follows the project root, not the subdirectory you clicked.
 - after runtime upgrades, the same project root still keeps the same port when that old port can be reclaimed
 - a folder outside that project root starts a different preview port
 
+## Large Directory Behavior
+
+Large directories on the active path do not eagerly render every sibling on first load.
+
+- the preview tree keeps the active branch visible
+- very large sibling sets stay on-demand until you manually expand that directory
+- manual expand still loads the full directory listing when you ask for it
+- this avoids re-rendering hundreds of sibling folders on every refresh for note-style repositories
+
 ## Safe Markdown Text Sizes
 
 Markdown text size uses a safe whitelist syntax instead of arbitrary HTML or inline CSS.
@@ -103,3 +112,4 @@ You can mix image links and text-size tokens in the same table:
 - Finder entry does not appear: right-click a folder item, not blank space
 - Codex app menu does not show `Use Browser Priview`: fully quit and reopen Codex after `--codex-app`
 - Browser does not open: make sure Node.js is installed and available in `PATH`
+- preview still feels slow on one page: inspect `~/Library/Application Support/Use Browser Priview/preview-perf.log` for `tree-request`, `tree-render`, `file-load`, and `longtask`

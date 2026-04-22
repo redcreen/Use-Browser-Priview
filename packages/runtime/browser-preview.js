@@ -4,11 +4,14 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
+const { getSupportDir } = require("./session-store.js");
 
 const OUTPUT_NAME = "Use Browser Priview";
 const TREE_REFRESH_MS = 3000;
 const FILE_REFRESH_MS = 1200;
 const RAW_PREFIX = "/__workspace_doc_browser__/raw/";
+const PERF_LOG_FILE = path.join(getSupportDir(), "preview-perf.log");
+const TREE_BRANCH_ONLY_THRESHOLD = 100;
 
 function normalizeSlashes(value) {
   return String(value || "").replace(/\\/g, "/");
@@ -254,6 +257,7 @@ const path = require("path");
 
 const root = ${JSON.stringify(workspaceRoot)};
 const rootPath = path.resolve(root);
+const perfLogFile = ${JSON.stringify(PERF_LOG_FILE)};
 const rootRealPath = (() => {
   try {
     return fs.realpathSync.native(rootPath);
@@ -265,6 +269,7 @@ const port = ${Number(port)};
 const TREE_REFRESH_MS = ${TREE_REFRESH_MS};
 const FILE_REFRESH_MS = ${FILE_REFRESH_MS};
 const RAW_PREFIX = ${JSON.stringify(RAW_PREFIX)};
+const TREE_BRANCH_ONLY_THRESHOLD = ${Number(TREE_BRANCH_ONLY_THRESHOLD)};
 
 const contentTypes = new Map([
   [".md", "text/markdown; charset=utf-8"],
@@ -314,6 +319,18 @@ function send(res, status, body, contentType) {
     "Cache-Control": "no-store",
   });
   res.end(body);
+}
+
+function appendPerfLog(entry) {
+  try {
+    fs.mkdirSync(path.dirname(perfLogFile), { recursive: true });
+    fs.appendFileSync(perfLogFile, JSON.stringify({
+      timestamp: new Date().toISOString(),
+      workspaceRoot: rootPath,
+      port,
+      ...entry,
+    }) + "\\n", "utf8");
+  } catch {}
 }
 
 function normalizeSlashes(value) {
@@ -549,10 +566,15 @@ function directoryHasVisibleChildren(relativeDir) {
   return false;
 }
 
-function buildDirectoryEntries(relativeDir) {
+function buildDirectoryEntries(relativeDir, options = {}) {
   const directoryInfo = inspectWorkspacePath(relativeDir);
   if (!directoryInfo || !directoryInfo.isDirectory || directoryInfo.isExternal || directoryInfo.isBrokenSymlink) {
-    return [];
+    return {
+      items: [],
+      totalCount: 0,
+      returnedCount: 0,
+      truncated: false,
+    };
   }
 
   let entries = [];
@@ -573,11 +595,28 @@ function buildDirectoryEntries(relativeDir) {
       .filter((entry) => entry && !shouldIgnoreEntry(entry.name, Boolean(entry.info && entry.info.isDirectory), true))
       .sort(compareResolvedEntries);
   } catch {
-    return [];
+    return {
+      items: [],
+      totalCount: 0,
+      returnedCount: 0,
+      truncated: false,
+    };
+  }
+
+  const focusMode = String(options.mode || "") === "branch";
+  const focusChildPath = normalizeSlashes(String(options.focusChildPath || "").replace(/^\\/+|\\/+$/g, ""));
+  let visibleEntries = entries;
+  let truncated = false;
+  if (focusMode && focusChildPath && entries.length > TREE_BRANCH_ONLY_THRESHOLD) {
+    const matchingEntries = entries.filter((entry) => normalizeSlashes(entry.relativePath) === focusChildPath);
+    if (matchingEntries.length) {
+      visibleEntries = matchingEntries;
+      truncated = matchingEntries.length !== entries.length;
+    }
   }
 
   const items = [];
-  for (const entry of entries) {
+  for (const entry of visibleEntries) {
     const { relativePath, info } = entry;
     if (info.isDirectory) {
       items.push({
@@ -599,7 +638,12 @@ function buildDirectoryEntries(relativeDir) {
       isSymlink: info.isSymlink,
     });
   }
-  return items;
+  return {
+    items,
+    totalCount: entries.length,
+    returnedCount: items.length,
+    truncated,
+  };
 }
 
 http.createServer((req, res) => {
@@ -609,15 +653,45 @@ http.createServer((req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "*",
     });
     return res.end();
   }
 
   const parsed = new URL(req.url, "http://127.0.0.1");
+  if (parsed.pathname === "/__workspace_doc_browser__/perf") {
+    if (req.method !== "POST") {
+      return send(res, 405, "Method Not Allowed", "text/plain; charset=utf-8");
+    }
+    let body = "";
+    req.setEncoding("utf8");
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 64 * 1024) {
+        req.destroy(new Error("Perf log payload too large."));
+      }
+    });
+    req.on("error", () => {
+      send(res, 400, "Bad Request", "text/plain; charset=utf-8");
+    });
+    req.on("end", () => {
+      try {
+        const parsedBody = JSON.parse(body || "{}");
+        appendPerfLog({
+          source: "browser",
+          ...parsedBody,
+        });
+      } catch {}
+      send(res, 204, "", "text/plain; charset=utf-8");
+    });
+    return;
+  }
   if (parsed.pathname === "/__workspace_doc_browser__/tree") {
+    const startedAt = Date.now();
     const relativeDir = normalizeSlashes(String(parsed.searchParams.get("path") || "").replace(/^\\/+|\\/+$/g, ""));
+    const mode = String(parsed.searchParams.get("mode") || "");
+    const focusChildPath = normalizeSlashes(String(parsed.searchParams.get("focusChild") || "").replace(/^\\/+|\\/+$/g, ""));
     const directoryInfo = inspectWorkspacePath(relativeDir);
     if (!directoryInfo) {
       return send(res, 404, "Not Found", "text/plain; charset=utf-8");
@@ -631,7 +705,22 @@ http.createServer((req, res) => {
     if (!directoryInfo.isDirectory) {
       return send(res, 404, "Not Found", "text/plain; charset=utf-8");
     }
-    return send(res, 200, JSON.stringify(buildDirectoryEntries(relativeDir)), "application/json; charset=utf-8");
+    const result = buildDirectoryEntries(relativeDir, {
+      mode,
+      focusChildPath,
+    });
+    appendPerfLog({
+      source: "server",
+      event: "tree-request",
+      relativeDir,
+      mode: mode || "full",
+      focusChildPath,
+      totalCount: result.totalCount,
+      returnedCount: result.returnedCount,
+      truncated: result.truncated,
+      durationMs: Date.now() - startedAt,
+    });
+    return send(res, 200, JSON.stringify(result.items), "application/json; charset=utf-8");
   }
   if (parsed.pathname === "/__workspace_doc_browser__/bootstrap") {
     const relativePath = String(parsed.searchParams.get("path") || "");
@@ -1356,6 +1445,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     const treeRefreshMs = ${Number(treeRefreshMs)};
     const fileRefreshMs = ${Number(fileRefreshMs)};
     const rawPrefix = ${JSON.stringify(RAW_PREFIX)};
+    const perfLogUrl = "/__workspace_doc_browser__/perf";
     const content = document.getElementById("content");
     const sidebar = document.getElementById("sidebar");
     const sidebarBody = document.getElementById("sidebar-body");
@@ -1371,6 +1461,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     const openFolders = new Set();
     const sidebarStateKey = "workspace-doc-browser.sidebar:" + workspaceName;
     const scrollStateKeyPrefix = "workspace-doc-browser.scroll:" + workspaceName + ":";
+    const perfSessionId = "perf-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
     const safeTextSizeClassMap = Object.freeze({
       sm: "markdown-size-sm",
       base: "markdown-size-base",
@@ -1492,10 +1583,98 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return String(value || "").replace(/^\\/+|\\/+$/g, "");
     }
 
-    function buildTreeUrl(directoryPath = "") {
+    function nowMs() {
+      if (typeof performance !== "undefined" && performance && typeof performance.now === "function") {
+        return performance.now();
+      }
+      return Date.now();
+    }
+
+    function reportPerf(eventName, payload = {}) {
+      const body = JSON.stringify({
+        event: eventName,
+        sessionId: perfSessionId,
+        pagePath: window.location.pathname + window.location.search + window.location.hash,
+        relativePath,
+        resourceKind: currentResourceKind,
+        ...payload,
+      });
+      try {
+        if (typeof navigator !== "undefined" && navigator && typeof navigator.sendBeacon === "function") {
+          const blob = typeof Blob === "function"
+            ? new Blob([body], { type: "application/json" })
+            : body;
+          if (navigator.sendBeacon(perfLogUrl, blob)) {
+            return;
+          }
+        }
+      } catch {}
+      try {
+        if (typeof fetch === "function") {
+          fetch(perfLogUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch {}
+    }
+
+    function getCurrentNavigationPath() {
+      const normalizedPath = normalizeTreePath(relativePath);
+      if (!normalizedPath) {
+        return "";
+      }
+      if (currentResourceKind === "directory") {
+        return normalizedPath;
+      }
+      return getCurrentDirectoryPath();
+    }
+
+    function isPathOnCurrentBranch(directoryPath) {
+      const normalizedDirectory = normalizeTreePath(directoryPath);
+      const currentPath = getCurrentNavigationPath();
+      if (!normalizedDirectory || !currentPath) {
+        return false;
+      }
+      return currentPath === normalizedDirectory || currentPath.startsWith(normalizedDirectory + "/");
+    }
+
+    function getFocusedChildPath(directoryPath) {
+      const normalizedDirectory = normalizeTreePath(directoryPath);
+      const currentPath = getCurrentNavigationPath();
+      if (!currentPath) {
+        return "";
+      }
+      const currentSegments = currentPath.split("/").filter(Boolean);
+      const directorySegments = normalizedDirectory ? normalizedDirectory.split("/").filter(Boolean) : [];
+      if (directorySegments.length >= currentSegments.length) {
+        return "";
+      }
+      for (let index = 0; index < directorySegments.length; index += 1) {
+        if (directorySegments[index] !== currentSegments[index]) {
+          return "";
+        }
+      }
+      return currentSegments.slice(0, directorySegments.length + 1).join("/");
+    }
+
+    function buildTreeUrl(directoryPath = "", options = {}) {
       const normalizedPath = normalizeTreePath(directoryPath);
-      return normalizedPath
-        ? "/__workspace_doc_browser__/tree?path=" + encodeURIComponent(normalizedPath)
+      const params = [];
+      if (normalizedPath) {
+        params.push("path=" + encodeURIComponent(normalizedPath));
+      }
+      if (options.mode === "branch" && options.focusChildPath) {
+        params.push("mode=branch");
+        params.push("focusChild=" + encodeURIComponent(normalizeTreePath(options.focusChildPath)));
+      }
+      const query = params.join("&");
+      return query
+        ? "/__workspace_doc_browser__/tree?" + query
         : "/__workspace_doc_browser__/tree";
     }
 
@@ -1551,29 +1730,64 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return treeCache.get(normalizeTreePath(directoryPath)) || [];
     }
 
-    function collectRequiredTreePaths() {
-      const requiredPaths = new Set([""]);
+    function createTreeRequest(directoryPath = "", options = {}) {
+      const normalizedPath = normalizeTreePath(directoryPath);
+      const normalizedFocusChildPath = normalizeTreePath(options.focusChildPath || "");
+      return {
+        path: normalizedPath,
+        mode: options.mode === "branch" && normalizedFocusChildPath ? "branch" : "full",
+        focusChildPath: options.mode === "branch" ? normalizedFocusChildPath : "",
+      };
+    }
+
+    function treeRequestKey(request) {
+      const normalizedRequest = request || createTreeRequest("");
+      return [
+        normalizeTreePath(normalizedRequest.path),
+        String(normalizedRequest.mode || "full"),
+        normalizeTreePath(normalizedRequest.focusChildPath || ""),
+      ].join("|");
+    }
+
+    function collectRequiredTreeRequests() {
+      const requests = new Map();
+      requests.set(treeRequestKey(createTreeRequest("")), createTreeRequest(""));
+
       const currentDirectoryPath = getCurrentDirectoryPath();
-      for (const ancestorPath of getAncestorDirectoryPaths(currentDirectoryPath)) {
-        requiredPaths.add(ancestorPath);
+      const ancestorPaths = getAncestorDirectoryPaths(currentDirectoryPath);
+      for (const ancestorPath of ancestorPaths.slice(0, -1)) {
+        const request = openFolders.has(ancestorPath)
+          ? createTreeRequest(ancestorPath)
+          : createTreeRequest(ancestorPath, {
+            mode: "branch",
+            focusChildPath: getFocusedChildPath(ancestorPath),
+          });
+        requests.set(treeRequestKey(request), request);
       }
-      if (currentResourceKind === "directory" && currentDirectoryPath) {
-        requiredPaths.add(currentDirectoryPath);
+
+      if (currentDirectoryPath) {
+        const currentDirectoryRequest = createTreeRequest(currentDirectoryPath);
+        requests.set(treeRequestKey(currentDirectoryRequest), currentDirectoryRequest);
       }
+
       for (const openPath of openFolders) {
         const normalizedPath = normalizeTreePath(openPath);
-        if (!normalizedPath) {
-          requiredPaths.add("");
-          continue;
-        }
-        requiredPaths.add(normalizedPath);
+        const request = createTreeRequest(normalizedPath);
+        requests.set(treeRequestKey(request), request);
         for (const ancestorPath of getAncestorDirectoryPaths(normalizedPath)) {
-          requiredPaths.add(ancestorPath);
+          const ancestorRequest = openFolders.has(ancestorPath)
+            ? createTreeRequest(ancestorPath)
+            : createTreeRequest(ancestorPath, {
+              mode: "branch",
+              focusChildPath: getFocusedChildPath(ancestorPath),
+            });
+          requests.set(treeRequestKey(ancestorRequest), ancestorRequest);
         }
       }
-      return Array.from(requiredPaths).sort((left, right) => {
-        const leftDepth = normalizeTreePath(left).split("/").filter(Boolean).length;
-        const rightDepth = normalizeTreePath(right).split("/").filter(Boolean).length;
+
+      return Array.from(requests.values()).sort((left, right) => {
+        const leftDepth = normalizeTreePath(left.path).split("/").filter(Boolean).length;
+        const rightDepth = normalizeTreePath(right.path).split("/").filter(Boolean).length;
         return leftDepth - rightDepth;
       });
     }
@@ -2017,11 +2231,43 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           return;
         }
         details.dataset.bound = "1";
+        const summary = details.querySelector("summary");
+        if (summary && summary.dataset.bound !== "1") {
+          summary.dataset.bound = "1";
+          const handleBranchPromotion = (event) => {
+            const normalizedPath = normalizeTreePath(details.dataset.path);
+            if (details.dataset.branchOnly === "1" && !openFolders.has(normalizedPath)) {
+              event.preventDefault();
+              event.stopPropagation();
+              openFolders.add(normalizedPath);
+              void ensureTreePathsLoaded([createTreeRequest(normalizedPath)], { renderAfterLoad: true });
+              return true;
+            }
+            details.dataset.userToggleIntent = "1";
+            return false;
+          };
+          summary.addEventListener("click", (event) => {
+            if (event.target && typeof event.target.closest === "function" && event.target.closest(".tree-directory-link")) {
+              return;
+            }
+            handleBranchPromotion(event);
+          });
+          summary.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              handleBranchPromotion(event);
+            }
+          });
+        }
         details.addEventListener("toggle", () => {
+          const userInitiated = details.dataset.userToggleIntent === "1";
+          details.dataset.userToggleIntent = "0";
+          if (!userInitiated) {
+            return;
+          }
           const normalizedPath = normalizeTreePath(details.dataset.path);
           if (details.open) {
             openFolders.add(normalizedPath);
-            void ensureTreePathsLoaded([normalizedPath], { renderAfterLoad: true });
+            void ensureTreePathsLoaded([createTreeRequest(normalizedPath)], { renderAfterLoad: true });
           } else {
             openFolders.delete(normalizedPath);
           }
@@ -2052,14 +2298,15 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           const directoryPath = normalizeTreePath(item.path);
           const href = previewHref(directoryPath, "directory");
           const isActiveDirectory = currentResourceKind === "directory" && normalizeTreePath(relativePath) === directoryPath;
-          const shouldOpen = isActiveDirectory || openFolders.has(directoryPath) || (directoryPath && normalizeTreePath(relativePath).startsWith(directoryPath + "/"));
+          const branchOnly = !openFolders.has(directoryPath) && isPathOnCurrentBranch(directoryPath) && directoryPath !== getCurrentDirectoryPath();
+          const shouldOpen = isActiveDirectory || openFolders.has(directoryPath) || branchOnly;
           const childItems = getTreeItems(directoryPath);
           const childMarkup = shouldOpen
             ? (childItems.length
               ? renderTreeItems(childItems)
               : (item.hasChildren ? renderTreeLoadingState() : ""))
             : "";
-          return "<li><details data-path=\\"" + escapeHtml(directoryPath) + "\\" " + (shouldOpen ? "open" : "") + "><summary class=\\"" + (isActiveDirectory ? "active" : "") + "\\"><a class=\\"tree-directory-link\\" href=\\"" + escapeHtml(href) + "\\">" + escapeHtml(item.title) + "</a></summary>" + childMarkup + "</details></li>";
+          return "<li><details data-path=\\"" + escapeHtml(directoryPath) + "\\" data-branch-only=\\"" + (branchOnly ? "1" : "0") + "\\" " + (shouldOpen ? "open" : "") + "><summary class=\\"" + (isActiveDirectory ? "active" : "") + "\\"><a class=\\"tree-directory-link\\" href=\\"" + escapeHtml(href) + "\\">" + escapeHtml(item.title) + "</a></summary>" + childMarkup + "</details></li>";
         }
         const active = currentResourceKind !== "directory" && item.sourcePath === relativePath ? " active" : "";
         let href = rawFileHref(item.sourcePath || "");
@@ -2074,6 +2321,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     }
 
     function renderTree(force = false) {
+      const startedAt = nowMs();
       const rootItems = getTreeItems("");
       if (!rootItems.length && !treeCache.has("")) {
         return;
@@ -2084,15 +2332,29 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       sidebarBody.innerHTML = renderTreeItems(rootItems);
       bindTreeInteractions();
       treeRendered = true;
+      const durationMs = Number((nowMs() - startedAt).toFixed(2));
+      if (durationMs >= 8 || sidebarBody.innerHTML.length >= 20000) {
+        reportPerf("tree-render", {
+          durationMs,
+          rootItemCount: rootItems.length,
+          htmlBytes: sidebarBody.innerHTML.length,
+        });
+      }
     }
 
-    async function loadTreeDirectory(directoryPath = "") {
-      const normalizedPath = normalizeTreePath(directoryPath);
-      if (treeLoadPromises.has(normalizedPath)) {
-        return treeLoadPromises.get(normalizedPath);
+    async function loadTreeDirectory(request = "") {
+      const normalizedRequest = typeof request === "string"
+        ? createTreeRequest(request)
+        : createTreeRequest(request && request.path, request || {});
+      const normalizedPath = normalizeTreePath(normalizedRequest.path);
+      const requestKey = treeRequestKey(normalizedRequest);
+      if (treeLoadPromises.has(requestKey)) {
+        return treeLoadPromises.get(requestKey);
       }
       const promise = (async () => {
-        const response = await fetchWithRetry(buildTreeUrl(normalizedPath), { cache: "no-store" });
+        const treeUrl = buildTreeUrl(normalizedPath, normalizedRequest);
+        const startedAt = nowMs();
+        const response = await fetchWithRetry(treeUrl, { cache: "no-store" });
         if (!response.ok) {
           throw new Error("HTTP " + response.status);
         }
@@ -2107,18 +2369,28 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         if (!treeCache.has(normalizedPath)) {
           treeCache.set(normalizedPath, items);
         }
+        const durationMs = Number((nowMs() - startedAt).toFixed(2));
+        if (durationMs >= 8 || items.length >= 100 || normalizedRequest.mode === "branch") {
+          reportPerf("tree-fetch", {
+            durationMs,
+            treePath: normalizedPath,
+            itemCount: items.length,
+            mode: normalizedRequest.mode,
+            focusChildPath: normalizedRequest.focusChildPath || "",
+          });
+        }
         return false;
       })().finally(() => {
-        treeLoadPromises.delete(normalizedPath);
+        treeLoadPromises.delete(requestKey);
       });
-      treeLoadPromises.set(normalizedPath, promise);
+      treeLoadPromises.set(requestKey, promise);
       return await promise;
     }
 
-    async function ensureTreePathsLoaded(paths, options = {}) {
+    async function ensureTreePathsLoaded(requests, options = {}) {
       let changed = false;
-      for (const directoryPath of paths) {
-        changed = (await loadTreeDirectory(directoryPath)) || changed;
+      for (const request of requests) {
+        changed = (await loadTreeDirectory(request)) || changed;
       }
       if (changed || !treeRendered || options.renderAfterLoad) {
         renderTree(Boolean(options.renderAfterLoad));
@@ -2129,17 +2401,11 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     }
 
     async function loadTree() {
-      captureOpenFolders();
-      await ensureTreePathsLoaded(collectRequiredTreePaths());
+      await ensureTreePathsLoaded(collectRequiredTreeRequests());
     }
 
     async function ensureCurrentDirectoryLoaded() {
-      const currentDirectoryPath = getCurrentDirectoryPath();
-      const pathsToLoad = currentDirectoryPath ? ["", ...getAncestorDirectoryPaths(currentDirectoryPath)] : [""];
-      if (currentResourceKind === "directory" && currentDirectoryPath) {
-        pathsToLoad.push(currentDirectoryPath);
-      }
-      await ensureTreePathsLoaded(Array.from(new Set(pathsToLoad)));
+      await ensureTreePathsLoaded(collectRequiredTreeRequests());
     }
     function renderDirectoryCard(item) {
       const resourcePath = item.kind === "directory" ? (item.path || "") : (item.sourcePath || "");
@@ -2295,16 +2561,25 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       return true;
     }
 
-    function captureOpenFolders() {
-      openFolders.clear();
-      document.querySelectorAll("details[data-path]").forEach((details) => {
-        if (details.open) {
-          openFolders.add(normalizeTreePath(details.dataset.path));
+    function observeLongTasks() {
+      try {
+        if (typeof PerformanceObserver !== "function") {
+          return;
         }
-      });
+        const observer = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            reportPerf("longtask", {
+              durationMs: Number(entry.duration.toFixed(2)),
+              name: entry.name || "longtask",
+            });
+          }
+        });
+        observer.observe({ entryTypes: ["longtask"] });
+      } catch {}
     }
 
     async function loadCurrentFile() {
+      const startedAt = nowMs();
       const fileKind = currentResourceKind === "directory" ? "directory" : fileKindForPath(relativePath);
       if (fileKind === "directory") {
         await ensureCurrentDirectoryLoaded();
@@ -2315,6 +2590,14 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           content.innerHTML = renderDirectoryFrame(directoryItems);
           restoreSavedScrollPosition(3);
         }
+        const durationMs = Number((nowMs() - startedAt).toFixed(2));
+        if (durationMs >= 8 || directoryItems.length >= 100) {
+          reportPerf("file-load", {
+            fileKind,
+            durationMs,
+            itemCount: directoryItems.length,
+          });
+        }
         return;
       }
       if (fileKind === "image") {
@@ -2322,6 +2605,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           lastMarkdown = "__image__";
           content.innerHTML = renderImageFrame();
           restoreSavedScrollPosition(3);
+        }
+        const durationMs = Number((nowMs() - startedAt).toFixed(2));
+        if (durationMs >= 8) {
+          reportPerf("file-load", {
+            fileKind,
+            durationMs,
+          });
         }
         return;
       }
@@ -2331,6 +2621,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           content.innerHTML = renderVideoFrame();
           restoreSavedScrollPosition(3);
         }
+        const durationMs = Number((nowMs() - startedAt).toFixed(2));
+        if (durationMs >= 8) {
+          reportPerf("file-load", {
+            fileKind,
+            durationMs,
+          });
+        }
         return;
       }
       if (fileKind === "html") {
@@ -2339,6 +2636,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           content.innerHTML = renderHtmlFrame();
           restoreSavedScrollPosition(3);
         }
+        const durationMs = Number((nowMs() - startedAt).toFixed(2));
+        if (durationMs >= 8) {
+          reportPerf("file-load", {
+            fileKind,
+            durationMs,
+          });
+        }
         return;
       }
       if (fileKind === "file") {
@@ -2346,6 +2650,13 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
           lastMarkdown = "__binary__";
           content.innerHTML = renderBinaryFrame();
           restoreSavedScrollPosition(3);
+        }
+        const durationMs = Number((nowMs() - startedAt).toFixed(2));
+        if (durationMs >= 8) {
+          reportPerf("file-load", {
+            fileKind,
+            durationMs,
+          });
         }
         return;
       }
@@ -2368,6 +2679,14 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
         content.innerHTML = renderTextFrame(text);
         restoreSavedScrollPosition(3);
       }
+      const durationMs = Number((nowMs() - startedAt).toFixed(2));
+      if (durationMs >= 8 || text.length >= 4000) {
+        reportPerf("file-load", {
+          fileKind,
+          durationMs,
+          textBytes: text.length,
+        });
+      }
     }
 
     async function refreshTree() {
@@ -2386,6 +2705,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
 
     document.title = relativePath ? relativePath + " - " + workspaceName : workspaceName;
     ensureHistoryEntryId();
+    observeLongTasks();
     try {
       if ("scrollRestoration" in window.history) {
         window.history.scrollRestoration = "manual";

@@ -7,17 +7,17 @@
 
 ## Current Phase
 
-Shared runtime extracted and baseline human-usable.
+Shared runtime baseline hardened for human-usable preview performance.
 
 ## Active Slice
 
-shared runtime extraction
+preview performance hardening
 
 ## Current Execution Line
 
-- Objective: keep all preview behavior inside `packages/runtime/` while preserving hot updates, cross-surface reuse, and installability
-- Plan Link: shared runtime extraction
-- Runway: one extraction closeout pass
+- Objective: keep deep note-page previews responsive without regressing shared-runtime behavior or port reuse
+- Plan Link: preview performance hardening
+- Runway: one hardening pass
 - Progress: 3 / 3 tasks complete
 - Stop Conditions:
   - blocker requires human direction
@@ -26,15 +26,15 @@ shared runtime extraction
 
 ## Execution Tasks
 
-- [x] EL-1 move shared browser preview logic into `packages/runtime/`
-- [x] EL-2 rewire VS Code, Finder, and Codex-app launch paths onto the shared runtime
-- [x] EL-3 update install/docs/governance language so `packages/runtime/` is the durable runtime truth
+- [x] EL-1 add durable preview performance logging for browser and tree activity
+- [x] EL-2 stop large active-path directories from eagerly loading full sibling sets
+- [x] EL-3 update docs, tests, and devlog so the performance contract stays durable
 
 ## Development Log Capture
 - Trigger Level: high
-- Pending Capture: yes
-- Reason: commits landed after the latest devlog and changed durable repo surfaces; latest examples: feat: extract shared preview runtime; feat: hot-load preview runtime without host restart
-- Last Entry: `docs/devlog/2026-04-22-support-safe-text-sizes-inside-markdown-tables.md`
+- Pending Capture: no
+- Reason: the latest durable performance hardening has already been captured in the newest devlog entry
+- Last Entry: `docs/devlog/2026-04-22-reduce-preview-jank-on-deep-note-pages.md`
 
 ## Architecture Supervision
 - Signal: `green`
@@ -58,6 +58,8 @@ shared runtime extraction
 - same-root preview port preservation across runtime upgrades encoded in code and docs
 - shared preview runtime extracted into `packages/runtime/`
 - installed VS Code, Finder, and Codex-app paths now carry the shared runtime instead of an adapter-local copy
+- deep note-page previews now keep large active-path directories on branch-only loading until the user explicitly expands them
+- preview performance logging now lands in `~/Library/Application Support/Use Browser Priview/preview-perf.log`
 
 ## In Progress
 

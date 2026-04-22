@@ -8,7 +8,7 @@
 | --- | --- |
 | Stage Progress | 2 / 4 stages complete |
 | Current Stage | Stage 2: Shared Runtime Extraction |
-| Current Objective | keep all preview behavior inside `packages/runtime/` while preserving hot updates, cross-surface reuse, and installability |
+| Current Objective | keep deep note-page previews responsive without regressing shared-runtime behavior or port reuse |
 | Next Queued Slice | `editor adapter expansion` |
 | Detailed Drill-Down | [reference/use-browser-priview/development-plan.md](reference/use-browser-priview/development-plan.md) |
 

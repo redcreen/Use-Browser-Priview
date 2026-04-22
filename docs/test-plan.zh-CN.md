@@ -25,6 +25,7 @@
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 代码升级后的端口复用 | 同一个项目根已经占用一个预览端口 | 升级运行时代码后，再从 Finder 或 VS Code / Codex 打开同一个仓库 | 先停掉旧进程，再在可回收时继续使用原端口，不悄悄换成新端口 |
 | VS Code 运行时热更新且不重启宿主 | 同一个 VS Code / Codex 窗口里 adapter 已经激活 | 修改磁盘上的预览运行时代码，不重启 Extension Host，再次触发 `Use Browser Priview` | 下一次预览动作直接使用最新 runtime，宿主进程保持不重启 |
+| 大目录激活路径 | 当前页面位于一个包含数百个同级目录的大目录树中 | 打开该页面并观察左侧树 | 首屏只保证激活路径可见，不一次性展开完整同级目录；手动展开后才加载完整列表 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | 目录 README 默认落点 | 目录内存在 `README.md` | 从 Finder、VS Code / Codex，或浏览器内目录链接打开该目录 | 直接落到同目录的 `README.md`，不先停在目录列表页 |
 | 安全 Markdown 字号 | Markdown 中包含 `[[size:lg|...]]`、`:::size-xl` 块，或表格单元格里的 `[[size:sm|...]]` | 在浏览器预览中打开该 Markdown | 白名单字号 token 会在普通段落、整块内容和 Markdown 表格里正确生效，不需要开放任意 HTML / 内联 CSS |
@@ -65,6 +66,8 @@
 - Markdown 链接目标归一化约束：`node tests/validate-markdown-link-href-normalization-contract.mjs`
 - 代码升级后端口复用约束：`node tests/validate-port-reuse-after-upgrade.mjs`
 - 安全 Markdown 字号约束：`node tests/validate-safe-text-size-contract.mjs`
+- 大目录激活路径按需加载约束：`node tests/validate-focused-tree-loading.mjs`
+- 预览性能日志入口约束：`node tests/validate-preview-perf-log-contract.mjs`
 - 前进后退位置恢复约束：`node tests/validate-scroll-restoration-contract.mjs`
 - 共享 runtime 抽离约束：`node tests/validate-shared-runtime-layout.mjs`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`

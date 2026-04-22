@@ -24,6 +24,7 @@ This project is risky in three places:
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Port reuse after runtime upgrade | The same project root already has a preview session on one port | Upgrade the runtime code, then open the same repo again from Finder or VS Code / Codex | The old preview process is stopped, the original port is reclaimed when available, and the repo stays on the same port |
 | VS Code runtime hot update without host restart | The adapter is already active in one VS Code / Codex window | Change preview runtime code on disk, then trigger `Use Browser Priview` again without restarting the Extension Host | The next preview action uses the latest runtime code and the host process stays running |
+| Large active-path directory | Current page lives inside a directory with hundreds of sibling folders | Open the page and inspect the sidebar tree | The active branch stays visible, but the huge sibling list is deferred until the user manually expands that directory |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Directory README default landing | The directory contains `README.md` | Open that directory from Finder, VS Code / Codex, or an in-browser directory link | Preview lands on the directory `README.md` instead of stopping on the directory listing first |
 | Safe Markdown text sizes | Markdown contains `[[size:lg|...]]`, a `:::size-xl` block, or table cells with `[[size:sm|...]]` | Open the Markdown file in browser preview | The whitelisted size tokens render correctly in normal paragraphs, blocks, and Markdown tables without requiring arbitrary HTML / inline CSS |
@@ -64,6 +65,8 @@ This project is risky in three places:
 - markdown link href normalization contract via `node tests/validate-markdown-link-href-normalization-contract.mjs`
 - port reuse after upgrade contract via `node tests/validate-port-reuse-after-upgrade.mjs`
 - safe Markdown text-size contract via `node tests/validate-safe-text-size-contract.mjs`
+- focused large-directory tree loading via `node tests/validate-focused-tree-loading.mjs`
+- preview perf log endpoint via `node tests/validate-preview-perf-log-contract.mjs`
 - back / forward position restore contract via `node tests/validate-scroll-restoration-contract.mjs`
 - shared runtime extraction contract via `node tests/validate-shared-runtime-layout.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`

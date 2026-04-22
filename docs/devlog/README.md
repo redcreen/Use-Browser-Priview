@@ -8,10 +8,11 @@ This directory records durable implementation narratives: what went wrong, what 
 
 ## Entries
 
-- [Extract shared preview runtime](2026-04-22-extract-shared-preview-runtime.md)
-- [Hot-load preview runtime without host restart](2026-04-22-hot-load-preview-runtime-without-host-restart.md)
 - [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
+- [Reduce preview jank on deep note pages](2026-04-22-reduce-preview-jank-on-deep-note-pages.md)
 - [Preserve preview ports across runtime upgrades](2026-04-22-preserve-preview-ports-across-runtime-upgrades.md)
+- [Hot-load preview runtime without host restart](2026-04-22-hot-load-preview-runtime-without-host-restart.md)
+- [Extract shared preview runtime](2026-04-22-extract-shared-preview-runtime.md)
 - [Clarify safe text-size syntax limits inside tables](2026-04-22-clarify-safe-text-size-syntax-limits-inside-tables.md)
 - [Add safe Markdown text-size syntax](2026-04-22-add-safe-markdown-text-size-syntax.md)
 - [Add dedicated usage guide for preview workflows](2026-04-22-add-dedicated-usage-guide-for-preview-workflows.md)

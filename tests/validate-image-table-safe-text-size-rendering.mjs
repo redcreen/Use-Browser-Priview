@@ -124,6 +124,11 @@ const sandbox = {
     pageXOffset: 0,
     pageYOffset: 0,
   },
+  navigator: {
+    sendBeacon() {
+      return true;
+    },
+  },
   fetch: async (url) => {
     if (String(url).startsWith("/__workspace_doc_browser__/tree")) {
       return {
