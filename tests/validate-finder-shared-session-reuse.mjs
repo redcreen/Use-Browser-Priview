@@ -5,10 +5,13 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const sourceRepoRoot = path.resolve(path.dirname(__filename), "..");
+const require = createRequire(import.meta.url);
+const { computeRuntimeCodeStamp } = require(path.join(sourceRepoRoot, "adapters", "vscode", "runtime-loader.js"));
 
 async function allocateListeningPort() {
   return await new Promise((resolve, reject) => {
@@ -35,9 +38,7 @@ async function main() {
   fs.mkdirSync(path.join(tempRepo, ".git"), { recursive: true });
   fs.mkdirSync(selectedSubdir, { recursive: true });
 
-  const codeStamp = crypto.createHash("sha1")
-    .update(fs.readFileSync(path.join(sourceRepoRoot, "adapters", "vscode", "extension.js")))
-    .digest("hex");
+  const codeStamp = computeRuntimeCodeStamp();
 
   const { port, server } = await allocateListeningPort();
   const sharedSessionFile = path.join(tempSupportDir, "shared-sessions.json");

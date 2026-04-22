@@ -14,6 +14,10 @@ const extensionSource = fs.readFileSync(
   path.join(repoRoot, "adapters", "vscode", "extension.js"),
   "utf8",
 );
+const runtimeSource = fs.readFileSync(
+  path.join(repoRoot, "adapters", "vscode", "extension-runtime.js"),
+  "utf8",
+);
 
 assert.deepEqual(
   adapterPackage.activationEvents,
@@ -42,6 +46,7 @@ for (const forbiddenFragment of [
   "onDidChangeActiveTextEditor",
   "updateStatusBar(",
   "Workspace Doc Browser:",
+  "workbench.action.restartExtensionHost",
 ]) {
   assert(
     !extensionSource.includes(forbiddenFragment),
@@ -52,6 +57,18 @@ for (const forbiddenFragment of [
 assert(
   extensionSource.includes("registerCommand(COMMAND_ID"),
   "Expected extension.js to keep the command handler registration.",
+);
+assert(
+  extensionSource.includes("loadRuntimeModule({ fresh: true })"),
+  "Expected extension.js to load the runtime dynamically so the Extension Host does not need a restart for runtime updates.",
+);
+assert(
+  extensionSource.includes("Preview runtime changed on disk. The next preview action will use the latest code without restarting Extension Host."),
+  "Expected extension.js to advertise hot updates without restarting the Extension Host.",
+);
+assert(
+  runtimeSource.includes("class WorkspaceDocBrowser"),
+  "Expected extension-runtime.js to keep the preview runtime implementation.",
 );
 
 console.log("validate-vscode-adapter: ok");

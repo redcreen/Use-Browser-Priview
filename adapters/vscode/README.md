@@ -23,10 +23,7 @@ bash install.sh --vscode
 ```
 
 Then in Codex / VS Code run:
-
-```text
-Developer: Restart Extension Host
-```
+Runtime updates after activation hot-load without restarting the Extension Host. If this is the first install in an already-open Codex / VS Code window and the menu does not appear yet, reopen the window once.
 
 ## What It Adds
 

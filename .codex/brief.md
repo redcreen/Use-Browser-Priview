@@ -28,6 +28,7 @@ Create a standalone Use Browser Priview product that can launch the same browser
 - the first standalone cut must still work on macOS locally
 - the new repo must be able to install itself without depending on the old repo at runtime
 - the same project root must keep one preview port across Finder, VS Code / Codex, and runtime upgrades whenever the old port can be reclaimed
+- preview runtime feature changes must hot-load inside an already-active VS Code / Codex adapter without restarting the Extension Host
 
 ## Definition of Done
 

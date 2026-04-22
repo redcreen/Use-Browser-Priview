@@ -12,7 +12,7 @@ For the common path, install the editor right-click entry with one command:
 curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh | bash -s -- --vscode
 ```
 
-Then run `Developer: Restart Extension Host` once in VS Code / Codex.
+Runtime updates after activation hot-load without restarting the Extension Host. If this is the first install in an already-open VS Code / Codex window and the menu does not appear yet, reopen the window once.
 
 If you want everything on macOS, run:
 
@@ -56,11 +56,7 @@ Recommended if you only want the editor right-click entry and want a single comm
 curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode
 ```
 
-After install, run this once in VS Code / Codex:
-
-```text
-Developer: Restart Extension Host
-```
+Runtime updates after activation hot-load without restarting the Extension Host. If this is the first install in an already-open VS Code / Codex window and the menu does not appear yet, reopen the window once.
 
 ### Install In The VS Code Extensions UI
 
@@ -70,7 +66,9 @@ If you want to install from the Extensions view instead of Terminal:
 2. Open the Extensions view in VS Code.
 3. Click `...` in the top-right corner.
 4. Choose `Install from VSIX...`.
-5. Pick the `.vsix` file and then run `Developer: Restart Extension Host`.
+5. Pick the `.vsix` file.
+
+If the right-click menu does not appear in an already-open window after the first install, reopen VS Code / Codex once. Runtime updates after activation hot-load without restarting the Extension Host.
 
 The extension is not published to the public VS Code Marketplace yet, so the current supported UI path is `Install from VSIX...`, not search-and-install by name.
 
@@ -238,7 +236,8 @@ Run the same install command again:
 
 ## Troubleshooting
 
-- VS Code still shows the old menu: run `Developer: Restart Extension Host`
+- VS Code still shows the old menu right after the first install: reopen the current VS Code / Codex window once
+- runtime code changed but the next preview still looks old: trigger `Use Browser Priview` again so the active adapter swaps to the latest runtime
 - Finder entry does not appear: right-click a folder item, not blank space
 - Codex app menu does not show `Use Browser Priview`: fully quit and reopen Codex after `--codex-app`, then re-run the patch after Codex updates
 - Codex app patch needs to be removed: run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex

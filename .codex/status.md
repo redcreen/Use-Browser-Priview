@@ -7,17 +7,17 @@
 
 ## Current Phase
 
-Standalone baseline closeout and first tagged release.
+Preview runtime hot-reload convergence.
 
 ## Active Slice
 
-standalone baseline release closeout
+preview runtime hot-reload convergence
 
 ## Current Execution Line
 
-- Objective: close Stage 1, converge release-facing docs, and cut the first standalone tag from this repo
-- Plan Link: standalone baseline release closeout
-- Runway: one release closeout pass
+- Objective: keep preview feature changes hot-loadable without restarting Extension Host while preserving Finder reuse and same-root port rules
+- Plan Link: preview runtime hot-reload convergence
+- Runway: one runtime-shell convergence pass
 - Progress: 3 / 3 tasks complete
 - Stop Conditions:
   - blocker requires human direction
@@ -26,9 +26,9 @@ standalone baseline release closeout
 
 ## Execution Tasks
 
-- [x] EL-1 converge release-facing docs, governance paths, and install surfaces
-- [x] EL-2 validate repo, installer, and Codex patch gates for release
-- [x] EL-3 tag the standalone baseline release from this repo
+- [x] EL-1 split the VS Code adapter shell from the preview runtime so feature work can hot-load without restarting Extension Host
+- [x] EL-2 keep Finder and shared-session flows on the same runtime contract without importing `vscode`
+- [x] EL-3 update install/docs/governance language so host restart is no longer the update path
 
 ## Development Log Capture
 - Trigger Level: high
@@ -38,16 +38,16 @@ standalone baseline release closeout
 
 ## Architecture Supervision
 - Signal: `green`
-- Signal Basis: install surfaces, rollback paths, release docs, validation gates, and same-root port reuse rules are now encoded in repo files rather than left to ad-hoc session memory
-- Root Cause Hypothesis: future host updates can still change bundle shape, and preview runtime changes can accidentally allocate a new port for the same project root if this rule is not enforced explicitly
-- Correct Layer: adapter isolation, staged app-bundle swap, durable docs, release validation, and shared session governance
+- Signal Basis: the main remaining product risk is update behavior inside an already-open editor window; same-root port reuse and durable docs already exist, but runtime code still needs a stable hot-load boundary
+- Root Cause Hypothesis: when preview behavior, parsing, or session logic lives directly in the extension host entry module, routine feature changes regress back to host restarts or leak editor-only dependencies into Finder
+- Correct Layer: stable adapter shell, hot-loaded preview runtime, Finder-safe shared runtime exports, durable docs, and governance rules
 - Automatic Review Trigger: no automatic trigger is currently active
 - Escalation Gate: continue automatically
 
 ## Current Escalation State
 - Current Gate: continue automatically
 - Reason: the current release line stays inside the agreed product boundary and no user-level tradeoff is open
-- Next Review Trigger: review again when a host update changes install, runtime, or release-facing behavior materially
+- Next Review Trigger: review again when a runtime change requires editing the shell instead of the hot-loaded runtime boundary
 
 ## Done
 
@@ -55,17 +55,18 @@ standalone baseline release closeout
 - first runnable adapter code moved into the repo
 - Codex app patch playbook captured in [.codex/codex-app-patch-playbook.md](codex-app-patch-playbook.md)
 - release governance, version surface, and release docs aligned with the standalone repo
+- same-root preview port preservation across runtime upgrades encoded in code and docs
 
 ## In Progress
 
 shared runtime extraction planning
-same-project-root port preservation across runtime upgrades
+future host-bundle changes that may touch the stable shell boundary
 
 ## Blockers / Open Decisions
 
 None.
 
 ## Next 3 Actions
-1. Preserve the same preview port for the same project root even when the runtime code changes.
-2. Start shared runtime extraction without regressing the current release baseline.
-3. Keep Codex / Finder / VS Code install paths green after host updates.
+1. Keep routine preview work inside `adapters/vscode/extension-runtime.js` so host restarts do not re-enter the update path.
+2. Start shared runtime extraction without regressing the new shell/runtime hot-load boundary.
+3. Re-check install surfaces after future host updates so the first-install fallback stays distinct from runtime hot updates.

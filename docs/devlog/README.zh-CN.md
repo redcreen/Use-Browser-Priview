@@ -8,6 +8,7 @@
 
 ## 条目
 
+- [Hot-load preview runtime without host restart](2026-04-22-hot-load-preview-runtime-without-host-restart.md)
 - [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
 - [Preserve preview ports across runtime upgrades](2026-04-22-preserve-preview-ports-across-runtime-upgrades.md)
 - [Clarify safe text-size syntax limits inside tables](2026-04-22-clarify-safe-text-size-syntax-limits-inside-tables.md)

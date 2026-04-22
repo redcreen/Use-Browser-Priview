@@ -110,6 +110,14 @@ function assertExtensionInstalled(sandbox) {
     "Installed extension.js should match the adapter source.",
   );
   assert(
+    fs.existsSync(path.join(installDir, "extension-runtime.js")),
+    "Expected VS Code install to include extension-runtime.js for hot-loaded preview logic.",
+  );
+  assert(
+    fs.existsSync(path.join(installDir, "runtime-loader.js")),
+    "Expected VS Code install to include runtime-loader.js for hot-loaded preview logic.",
+  );
+  assert(
     fs.existsSync(path.join(installDir, "session-store.js")),
     "Expected VS Code install to include session-store.js for cross-surface reuse.",
   );
@@ -122,6 +130,8 @@ function assertFinderInstalled(sandbox) {
 
   assert(fs.existsSync(path.join(runtimeDir, "open-finder-preview.js")), "Expected Finder runtime to include open-finder-preview.js.");
   assert(fs.existsSync(path.join(runtimeDir, "open-finder-preview.sh")), "Expected Finder runtime to include open-finder-preview.sh.");
+  assert(fs.existsSync(path.join(runtimeDir, "extension-runtime.js")), "Expected Finder runtime to include extension-runtime.js.");
+  assert(fs.existsSync(path.join(runtimeDir, "runtime-loader.js")), "Expected Finder runtime to include runtime-loader.js.");
   assert(fs.existsSync(path.join(runtimeDir, "session-store.js")), "Expected Finder runtime to include session-store.js.");
   assert(fs.existsSync(path.join(workflowDir, "Contents", "Info.plist")), "Expected Finder workflow Info.plist.");
   assert(
@@ -151,7 +161,8 @@ function testVscodeOnly() {
   try {
     const output = runInstall(["--vscode"], sandbox);
     assert(output.includes("Installed VS Code / Codex adapter"), "Expected VS Code install output.");
-    assert(output.includes("Restart Extension Host"), "Expected VS Code install to remind users to restart the extension host.");
+    assert(output.includes("hot-load without restarting the Extension Host"), "Expected VS Code install to explain runtime hot loading.");
+    assert(output.includes("menu does not appear yet"), "Expected VS Code install to explain the first-install fallback.");
     assertExtensionInstalled(sandbox);
     assertMissing(legacyDir, "Expected legacy workspace-doc-browser copy to be removed.");
     assertMissing(sandbox.workflowDir, "VS Code-only install should not create a Finder workflow.");
@@ -194,7 +205,8 @@ function testRemoteVscodeOnlyInstall() {
   try {
     const output = runRemoteInstall(["--vscode"], sandbox, archivePath);
     assert(output.includes("Installed VS Code / Codex adapter"), "Expected remote VS Code install output.");
-    assert(output.includes("Restart Extension Host"), "Expected remote VS Code install to remind users to restart the extension host.");
+    assert(output.includes("hot-load without restarting the Extension Host"), "Expected remote VS Code install to explain runtime hot loading.");
+    assert(output.includes("menu does not appear yet"), "Expected remote VS Code install to explain the first-install fallback.");
     assertExtensionInstalled(sandbox);
     assertMissing(sandbox.workflowDir, "Remote VS Code-only install should not create a Finder workflow.");
     assertMissing(expectedFinderRuntimeDir(sandbox), "Remote VS Code-only install should not create Finder runtime files.");

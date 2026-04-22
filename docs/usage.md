@@ -12,6 +12,7 @@ Notes:
 - VS Code / Codex only exposes the right-click entry.
 - There is no status-bar button.
 - There is no command-palette shortcut.
+- Runtime updates after activation hot-load without restarting the Extension Host.
 
 ## Open From Finder
 
@@ -97,7 +98,8 @@ You can mix image links and text-size tokens in the same table:
 
 ## Troubleshooting
 
-- VS Code still shows the old menu: run `Developer: Restart Extension Host`
+- VS Code still shows no menu right after the first install: reopen the current VS Code / Codex window once
+- runtime code changed but the next preview still looks old: trigger `Use Browser Priview` again so the active adapter swaps to the latest runtime
 - Finder entry does not appear: right-click a folder item, not blank space
 - Codex app menu does not show `Use Browser Priview`: fully quit and reopen Codex after `--codex-app`
 - Browser does not open: make sure Node.js is installed and available in `PATH`

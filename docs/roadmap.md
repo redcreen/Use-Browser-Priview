@@ -8,7 +8,7 @@
 | --- | --- |
 | Stage Progress | 1 / 4 stages in progress |
 | Current Stage | Stage 1: Standalone Repo Baseline |
-| Current Objective | close Stage 1, converge release-facing docs and governance, and ship the first standalone tagged baseline |
+| Current Objective | keep preview feature changes hot-loadable without restarting Extension Host while preserving Finder reuse and same-root port rules |
 | Next Queued Slice | `shared runtime extraction` |
 | Detailed Drill-Down | [reference/use-browser-priview/development-plan.md](reference/use-browser-priview/development-plan.md) |
 

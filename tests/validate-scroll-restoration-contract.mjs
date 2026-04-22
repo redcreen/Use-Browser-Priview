@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), "..");
-const extensionSource = fs.readFileSync(
-  path.join(repoRoot, "adapters", "vscode", "extension.js"),
+const runtimeSource = fs.readFileSync(
+  path.join(repoRoot, "adapters", "vscode", "extension-runtime.js"),
   "utf8",
 );
 
@@ -21,8 +21,8 @@ for (const requiredFragment of [
   "scrollToCurrentHashTarget();",
 ]) {
   assert(
-    extensionSource.includes(requiredFragment),
-    `Expected extension.js to contain scroll restoration fragment: ${requiredFragment}`,
+    runtimeSource.includes(requiredFragment),
+    `Expected extension-runtime.js to contain scroll restoration fragment: ${requiredFragment}`,
   );
 }
 

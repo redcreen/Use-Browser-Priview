@@ -16,14 +16,15 @@
 | --- | --- | --- | --- |
 | Finder 文件夹预览 | 已安装 Finder Quick Action | 对文件夹项右键执行 `Use Browser Priview` | 浏览器打开的是当前选中文件夹，而不是别的仓库根目录 |
 | Codex / VS Code Markdown 预览 | 已安装编辑器 adapter，且已打开本地 Markdown | 在编辑器里右键执行 `Use Browser Priview` | 浏览器打开当前 Markdown 的预览页 |
-| 只装 VS Code | 当前没有 adapter 或存在旧 `workspace-doc-browser` 副本 | 执行 `bash install.sh --vscode`，重启扩展宿主后在 VS Code 里对 Markdown 右键 | 新 adapter 安装成功，旧 `workspace-doc-browser` 副本被清理，且只剩一个 `Use Browser Priview` 右键入口 |
-| VS Code 远程一条命令安装 | 机器可以通过 curl 访问公开仓库 | 执行 `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`，重启扩展宿主后在 VS Code 里对 Markdown 右键 | 不需要先 clone 仓库也能完成安装，并且 VS Code 右键入口可用 |
+| 只装 VS Code | 当前没有 adapter 或存在旧 `workspace-doc-browser` 副本 | 执行 `bash install.sh --vscode`；如果当前窗口保持打开且菜单还没出现，就重开一次窗口；然后在 VS Code 里对 Markdown 右键 | 新 adapter 安装成功，旧 `workspace-doc-browser` 副本被清理，且只剩一个 `Use Browser Priview` 右键入口 |
+| VS Code 远程一条命令安装 | 机器可以通过 curl 访问公开仓库 | 执行 `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`；如果当前窗口保持打开且菜单还没出现，就重开一次窗口；然后在 VS Code 里对 Markdown 右键 | 不需要先 clone 仓库也能完成安装，并且 VS Code 右键入口可用 |
 | 只装 Finder | macOS，尚未安装 Finder 路径 | 执行 `bash install.sh --finder`，然后在 Finder 里对文件夹项右键 | Finder Quick Action 出现且可用，不依赖 VS Code 扩展安装 |
 | 全量安装 | macOS，干净环境或历史安装环境 | 执行 `bash install.sh` | VS Code 和 Finder 两条入口一次安装完成 |
 | 安装 Codex app patch | macOS，已安装 Codex 桌面 app | 执行 `bash install.sh --codex-app`，彻底退出并重开 Codex，然后在 Codex 里对文件链接右键 | `Open With` 里出现 `Use Browser Priview`，且不影响普通 VS Code / Finder 安装路径 |
 | 回滚 Codex app patch | macOS，已安装 Codex app patch | 执行 `bash adapters/codex-app/uninstall-codex-app.sh`，然后彻底退出并重开 Codex | Codex 回到 clean backup bundle，并且不再带 patch 启动 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 代码升级后的端口复用 | 同一个项目根已经占用一个预览端口 | 升级运行时代码后，再从 Finder 或 VS Code / Codex 打开同一个仓库 | 先停掉旧进程，再在可回收时继续使用原端口，不悄悄换成新端口 |
+| VS Code 运行时热更新且不重启宿主 | 同一个 VS Code / Codex 窗口里 adapter 已经激活 | 修改磁盘上的预览运行时代码，不重启 Extension Host，再次触发 `Use Browser Priview` | 下一次预览动作直接使用最新 runtime，宿主进程保持不重启 |
 | 目录浏览 | 浏览器已经打开目录页 | 点击子目录 | 进入目录列表页，仍然保持同一套预览模型 |
 | 目录 README 默认落点 | 目录内存在 `README.md` | 从 Finder、VS Code / Codex，或浏览器内目录链接打开该目录 | 直接落到同目录的 `README.md`，不先停在目录列表页 |
 | 安全 Markdown 字号 | Markdown 中包含 `[[size:lg|...]]`、`:::size-xl` 块，或表格单元格里的 `[[size:sm|...]]` | 在浏览器预览中打开该 Markdown | 白名单字号 token 会在普通段落、整块内容和 Markdown 表格里正确生效，不需要开放任意 HTML / 内联 CSS |
@@ -41,6 +42,8 @@
 - `bash install.sh --help`
 - 远程安装 smoke test：`cat install.sh | bash -s -- --vscode`，并配合 `USE_BROWSER_PRIVIEW_ARCHIVE_SOURCE=<archive>`
 - `node --check adapters/vscode/extension.js`
+- `node --check adapters/vscode/extension-runtime.js`
+- `node --check adapters/vscode/runtime-loader.js`
 - `node --check adapters/vscode/open-finder-preview.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
 - `bash -n adapters/vscode/install-macos-finder-quick-action.sh`
@@ -67,6 +70,7 @@
 - Finder 对文件夹项右键时能看到 `Use Browser Priview`
 - Finder 触发后浏览器有明确可见动作，而不是静默没反应
 - Codex / VS Code 右键时只会看到一个 `Use Browser Priview`
+- adapter 已经激活后，预览运行时代码改动会在下一次右键打开时生效，不需要重启 Extension Host
 - 安装可选 patch 并重开 Codex 后，在 Codex 文件链接右键的 `Open With` 里能看到 `Use Browser Priview`
 - Codex / VS Code 不再出现 `Docs Live` 或 `Use Browser Priview` 状态栏按钮
 - Finder 和编辑器两个入口打开后，看到的是同一类浏览器预览体验

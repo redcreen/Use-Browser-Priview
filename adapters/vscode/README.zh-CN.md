@@ -23,10 +23,7 @@ bash install.sh --vscode
 ```
 
 然后在 Codex / VS Code 里执行：
-
-```text
-Developer: Restart Extension Host
-```
+激活后，运行时代码更新会自动热加载，不需要重启 Extension Host。如果这是你在一个已经打开的 Codex / VS Code 窗口里的首次安装，而且菜单还没出现，重开一次窗口即可。
 
 ## 它增加了什么
 

@@ -175,7 +175,8 @@ install_vscode() {
   remove_extension_family "redcreen.workspace-doc-browser"
   install_tree "$ADAPTER_DIR" "$target_dir"
   echo "Installed VS Code / Codex adapter -> $target_dir"
-  echo "Next step: in Codex / VS Code run 'Developer: Restart Extension Host'"
+  echo "Runtime updates hot-load without restarting the Extension Host."
+  echo "If this is the first install in an already-open Codex / VS Code window and the menu does not appear yet, reopen the window once."
 }
 
 install_finder() {

@@ -7,7 +7,6 @@ const fs = require("fs");
 const net = require("net");
 const os = require("os");
 const path = require("path");
-const vm = require("vm");
 const {
   canonicalPath,
   loadSharedSessions,
@@ -15,8 +14,11 @@ const {
   saveSharedSessions,
   storeSessionRecord,
 } = require("./session-store");
+const {
+  computeRuntimeCodeStamp,
+  loadRuntimeModule,
+} = require("./runtime-loader");
 
-const EXTENSION_SOURCE_PATH = path.join(__dirname, "extension.js");
 const SESSION_DIR = path.join(os.homedir(), ".codex", "workspace-doc-browser", "finder");
 const SESSION_FILE = path.join(SESSION_DIR, "sessions.json");
 const FINDER_LOG_FILE = path.join(SESSION_DIR, "finder.log");
@@ -32,52 +34,13 @@ function appendFinderLog(message) {
   } catch {}
 }
 
-function loadExtensionSource() {
-  return fs.readFileSync(EXTENSION_SOURCE_PATH, "utf8");
-}
-
-function extractBetween(source, startMarker, endMarker) {
-  const start = source.indexOf(startMarker);
-  if (start < 0) {
-    throw new Error(`Unable to find ${startMarker} in extension.js`);
-  }
-  const end = source.indexOf(endMarker, start);
-  if (end < 0) {
-    throw new Error(`Unable to find ${endMarker} in extension.js`);
-  }
-  return source.slice(start, end).trim();
-}
-
-function extractConst(source, name) {
-  const match = source.match(new RegExp(String.raw`const\s+${name}\s*=\s*([^;]+);`));
-  if (!match) {
-    throw new Error(`Unable to find constant ${name} in extension.js`);
-  }
-  return vm.runInNewContext(match[1]);
-}
-
 function loadPreviewBuilders() {
-  const extensionSource = loadExtensionSource();
-  const context = {
-    TREE_REFRESH_MS: extractConst(extensionSource, "TREE_REFRESH_MS"),
-    FILE_REFRESH_MS: extractConst(extensionSource, "FILE_REFRESH_MS"),
-    RAW_PREFIX: extractConst(extensionSource, "RAW_PREFIX"),
-    result: null,
-  };
-  vm.createContext(context);
-  const buildRawSource = extractBetween(
-    extensionSource,
-    "function buildRawFileServerScript(",
-    "function buildBootstrapViewerHtml(",
-  );
-  const bootstrapSource = extractBetween(
-    extensionSource,
-    "function buildBootstrapViewerHtml(",
-    "function waitForPortReady(",
-  );
-  vm.runInContext(`${buildRawSource}\n${bootstrapSource}\nresult = { buildRawFileServerScript, buildBootstrapViewerHtml };`, context);
+  const runtime = loadRuntimeModule({ fresh: true });
+  if (!runtime || typeof runtime.buildRawFileServerScript !== "function") {
+    throw new Error("Use Browser Priview runtime is missing buildRawFileServerScript().");
+  }
   return {
-    buildRawFileServerScript: context.result.buildRawFileServerScript,
+    buildRawFileServerScript: runtime.buildRawFileServerScript,
   };
 }
 
@@ -362,7 +325,7 @@ function saveSessions(data) {
 }
 
 function computeCodeStamp() {
-  return crypto.createHash("sha1").update(fs.readFileSync(EXTENSION_SOURCE_PATH)).digest("hex");
+  return computeRuntimeCodeStamp();
 }
 
 function safeKill(pid) {

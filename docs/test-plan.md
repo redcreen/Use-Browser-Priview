@@ -15,14 +15,15 @@ This project is risky in three places:
 | --- | --- | --- | --- |
 | Folder preview from Finder | macOS, Finder Quick Action installed | Right-click a folder item and run `Use Browser Priview` | Browser opens the selected folder, not an unrelated repo root |
 | Markdown preview from Codex / VS Code | adapter installed, local Markdown file open | Right-click a Markdown editor and run `Use Browser Priview` | Browser opens the selected Markdown preview |
-| VS Code only install | no current adapter or a legacy adapter copy present | Run `bash install.sh --vscode`, restart the extension host, then right-click Markdown in VS Code | The new adapter installs cleanly, legacy `workspace-doc-browser` copies are removed, and only one `Use Browser Priview` context action remains |
-| Remote VS Code one-line install | machine has curl access to the public repo | Run `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`, restart the extension host, then right-click Markdown in VS Code | The adapter installs without cloning the repo locally and the VS Code right-click entry works |
+| VS Code only install | no current adapter or a legacy adapter copy present | Run `bash install.sh --vscode`; if the current window stays open and the menu is still missing, reopen the window once; then right-click Markdown in VS Code | The new adapter installs cleanly, legacy `workspace-doc-browser` copies are removed, and only one `Use Browser Priview` context action remains |
+| Remote VS Code one-line install | machine has curl access to the public repo | Run `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`; if the current window stays open and the menu is still missing, reopen the window once; then right-click Markdown in VS Code | The adapter installs without cloning the repo locally and the VS Code right-click entry works |
 | Finder only install | macOS, Finder path not installed yet | Run `bash install.sh --finder`, then right-click a folder item in Finder | Finder Quick Action appears and works without requiring a VS Code extension install |
 | Full install | macOS, clean machine or stale install | Run `bash install.sh` | VS Code and Finder entry points both install from one command |
 | Codex app patch install | macOS, Codex desktop app installed | Run `bash install.sh --codex-app`, fully quit Codex, reopen it, then right-click a file link inside Codex | `Open With` contains `Use Browser Priview` without affecting the normal VS Code / Finder install paths |
 | Codex app patch rollback | macOS, Codex app patch already installed | Run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex | Codex returns to the clean backup bundle and starts without the patch |
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Port reuse after runtime upgrade | The same project root already has a preview session on one port | Upgrade the runtime code, then open the same repo again from Finder or VS Code / Codex | The old preview process is stopped, the original port is reclaimed when available, and the repo stays on the same port |
+| VS Code runtime hot update without host restart | The adapter is already active in one VS Code / Codex window | Change preview runtime code on disk, then trigger `Use Browser Priview` again without restarting the Extension Host | The next preview action uses the latest runtime code and the host process stays running |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Directory README default landing | The directory contains `README.md` | Open that directory from Finder, VS Code / Codex, or an in-browser directory link | Preview lands on the directory `README.md` instead of stopping on the directory listing first |
 | Safe Markdown text sizes | Markdown contains `[[size:lg|...]]`, a `:::size-xl` block, or table cells with `[[size:sm|...]]` | Open the Markdown file in browser preview | The whitelisted size tokens render correctly in normal paragraphs, blocks, and Markdown tables without requiring arbitrary HTML / inline CSS |
@@ -40,6 +41,8 @@ This project is risky in three places:
 - `bash install.sh --help`
 - remote installer smoke test via `cat install.sh | bash -s -- --vscode` with `USE_BROWSER_PRIVIEW_ARCHIVE_SOURCE=<archive>`
 - `node --check adapters/vscode/extension.js`
+- `node --check adapters/vscode/extension-runtime.js`
+- `node --check adapters/vscode/runtime-loader.js`
 - `node --check adapters/vscode/open-finder-preview.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
 - `bash -n adapters/vscode/install-macos-finder-quick-action.sh`
@@ -66,6 +69,7 @@ This project is risky in three places:
 - Finder folder-item right click shows `Use Browser Priview`
 - Finder launch visibly opens or activates the browser
 - Codex / VS Code right click shows exactly one `Use Browser Priview`
+- after the adapter is already active, preview runtime changes apply on the next right-click open without restarting the Extension Host
 - Codex app file-link right click shows `Open With` -> `Use Browser Priview` after the optional patch is installed and Codex is relaunched
 - Codex / VS Code does not show a `Docs Live` or `Use Browser Priview` status-bar button
 - editor right-click and Finder right-click both land in the same preview behavior family

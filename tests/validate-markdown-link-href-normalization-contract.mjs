@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), "..");
-const extensionSource = fs.readFileSync(
-  path.join(repoRoot, "adapters", "vscode", "extension.js"),
+const runtimeSource = fs.readFileSync(
+  path.join(repoRoot, "adapters", "vscode", "extension-runtime.js"),
   "utf8",
 );
 
@@ -20,14 +20,14 @@ for (const fragment of [
   "const raw = normalizeMarkdownHref(href);",
 ]) {
   assert(
-    extensionSource.includes(fragment),
-    `Expected markdown href normalization fragment: ${fragment}`,
+    runtimeSource.includes(fragment),
+    `Expected markdown href normalization fragment in extension-runtime.js: ${fragment}`,
   );
 }
 
 assert(
-  extensionSource.includes("function resolvePreviewHref(href)") &&
-    extensionSource.includes("function resolveInlineImageSrc(href)"),
+  runtimeSource.includes("function resolvePreviewHref(href)") &&
+    runtimeSource.includes("function resolveInlineImageSrc(href)"),
   "Expected both link and image href resolvers to exist.",
 );
 
