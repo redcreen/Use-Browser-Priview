@@ -1516,7 +1516,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       text = text.replace(/\\*([^*]+)\\*/g, "<em>$1</em>");
       text = text.replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, (_, label, href) => '<a href="' + escapeHtml(resolvePreviewHref(href)) + '">' + label + '</a>');
       if (allowSafeTextSizes && inlineSizeTokens.length) {
-        text = text.replace(/@@UBP_SAFE_TEXT_SIZE_(\d+)@@/g, (_, tokenIndex) => {
+        text = text.replace(/@@UBP_SAFE_TEXT_SIZE_(\\d+)@@/g, (_, tokenIndex) => {
           const token = inlineSizeTokens[Number(tokenIndex)];
           if (!token) {
             return "";
@@ -1541,7 +1541,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     }
 
     function restoreSafeTextSizeTokens(value, protectedTokens) {
-      return String(value || "").replace(/@@UBP_SAFE_TABLE_SIZE_(\d+)@@/g, (_, tokenIndex) => {
+      return String(value || "").replace(/@@UBP_SAFE_TABLE_SIZE_(\\d+)@@/g, (_, tokenIndex) => {
         const token = protectedTokens[Number(tokenIndex)];
         return token || "";
       });
