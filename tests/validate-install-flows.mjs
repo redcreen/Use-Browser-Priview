@@ -118,8 +118,20 @@ function assertExtensionInstalled(sandbox) {
     "Expected VS Code install to include runtime-loader.js for hot-loaded preview logic.",
   );
   assert(
-    fs.existsSync(path.join(installDir, "session-store.js")),
-    "Expected VS Code install to include session-store.js for cross-surface reuse.",
+    fs.existsSync(path.join(installDir, "runtime-paths.js")),
+    "Expected VS Code install to include runtime-paths.js for repo/install runtime resolution.",
+  );
+  assert(
+    fs.existsSync(path.join(installDir, "packages", "runtime", "browser-preview.js")),
+    "Expected VS Code install to include the shared browser preview runtime.",
+  );
+  assert(
+    fs.existsSync(path.join(installDir, "packages", "runtime", "runtime-loader.js")),
+    "Expected VS Code install to include the shared runtime loader.",
+  );
+  assert(
+    fs.existsSync(path.join(installDir, "packages", "runtime", "session-store.js")),
+    "Expected VS Code install to include the shared session store.",
   );
 }
 
@@ -132,7 +144,10 @@ function assertFinderInstalled(sandbox) {
   assert(fs.existsSync(path.join(runtimeDir, "open-finder-preview.sh")), "Expected Finder runtime to include open-finder-preview.sh.");
   assert(fs.existsSync(path.join(runtimeDir, "extension-runtime.js")), "Expected Finder runtime to include extension-runtime.js.");
   assert(fs.existsSync(path.join(runtimeDir, "runtime-loader.js")), "Expected Finder runtime to include runtime-loader.js.");
-  assert(fs.existsSync(path.join(runtimeDir, "session-store.js")), "Expected Finder runtime to include session-store.js.");
+  assert(fs.existsSync(path.join(runtimeDir, "runtime-paths.js")), "Expected Finder runtime to include runtime-paths.js.");
+  assert(fs.existsSync(path.join(runtimeDir, "packages", "runtime", "browser-preview.js")), "Expected Finder runtime to include the shared browser preview runtime.");
+  assert(fs.existsSync(path.join(runtimeDir, "packages", "runtime", "runtime-loader.js")), "Expected Finder runtime to include the shared runtime loader.");
+  assert(fs.existsSync(path.join(runtimeDir, "packages", "runtime", "session-store.js")), "Expected Finder runtime to include the shared session store.");
   assert(fs.existsSync(path.join(workflowDir, "Contents", "Info.plist")), "Expected Finder workflow Info.plist.");
   assert(
     workflowSource.includes(path.join(runtimeDir, "open-finder-preview.sh")),

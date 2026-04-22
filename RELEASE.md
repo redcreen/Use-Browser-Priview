@@ -28,9 +28,9 @@ This repo ships as a standalone local product. A release should leave behind:
 
 ## Current Release Baseline
 
-- current version file: `0.0.2`
-- current release tag target: `v0.0.2`
-- remote install examples should use `https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh`
+- current version file: `0.0.3`
+- current release tag target: `v0.0.3`
+- remote install examples should use `https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.3/install.sh`
 
 ## Validation Notes
 

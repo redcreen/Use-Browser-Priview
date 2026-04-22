@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), "..");
 const runtimeSource = fs.readFileSync(
-  path.join(repoRoot, "adapters", "vscode", "extension-runtime.js"),
+  path.join(repoRoot, "packages", "runtime", "browser-preview.js"),
   "utf8",
 );
 const finderSource = fs.readFileSync(
@@ -27,7 +27,7 @@ for (const source of [runtimeSource, finderSource]) {
 
 assert(
   runtimeSource.includes("function renderHtmlFrame()"),
-  "Expected the browser preview runtime to define an HTML renderer.",
+  "Expected the shared browser preview runtime to define an HTML renderer.",
 );
 assert(
   runtimeSource.includes("<iframe src=\""),

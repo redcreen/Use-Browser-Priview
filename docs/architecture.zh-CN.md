@@ -41,15 +41,21 @@ Launch Surface 是触发入口：
 
 Codex 桌面 patch 这条路径现在走的是“staged app bundle swap + clean backup”模式，不再原地改写 `Resources/app.asar`。
 
-## 当前过渡态
+## 当前 Runtime 形态
 
-这个仓库刚从原来的 VS Code 中心实现里抽离出来，所以当前是一个有意识的过渡态：
+共享 runtime 现在已经抽到 `packages/runtime/`：
 
-- 第一版可运行 runtime 还和 VS Code adapter 放在一起
-- Finder 启动链先直接复用这套 runtime，而不是再写第二套
-- 下一阶段的重点是把共享 runtime 抽到独立包里，让所有 adapter 都直接依赖它
+- `packages/runtime/browser-preview.js`：共享浏览器预览引擎和 raw server 构建逻辑
+- `packages/runtime/session-store.js`：共享的同项目根 session / 端口复用规则
+- `packages/runtime/runtime-loader.js`：共享 runtime 的 code stamp 和 fresh-load 入口
 
-这在第一版独立化里是可接受的，因为第一阶段先解决“仓库归属”和“产品边界”，第二阶段再解决“内部 runtime 解耦”。
+宿主侧现在都只在这层之上做桥接：
+
+- `adapters/vscode/extension.js`：稳定的 Extension Host shell，负责热更新检测
+- `adapters/vscode/extension-runtime.js`：很薄的 VS Code bridge，把 editor 上下文转成共享 runtime 调用
+- `adapters/vscode/open-finder-preview.js`：Finder / Codex-app launcher，目标也是同一套共享 runtime
+
+这意味着 Finder 和 VS Code 现在都不再把 `adapters/vscode/extension.js` 或某个 adapter 私有的 session-store 文件当成 runtime 真相。
 
 ## 边界规则
 
@@ -61,13 +67,18 @@ Codex 桌面 patch 这条路径现在走的是“staged app bundle swap + clean 
 - Codex 桌面 app 的 patch 逻辑只留在 `adapters/codex-app/`，不能把 app bundle patch 细节污染到普通 VS Code / Finder 路径
 - 当前 VS Code adapter 故意只保留右键入口，像启动即常驻的 `Docs Live` 状态指示这类持久 UI 不再放进 adapter 表面
 
-## 后续目标形态
+## 下一步目标形态
 
-长期目标结构是：
+当前已经落地的稳定结构是：
 
 - `packages/runtime/`
-- `adapters/finder/`
 - `adapters/vscode/`
+- `adapters/codex-app/`
+- 从仓库安装出来的 Finder Quick Action runtime
+
+下一步的目标结构是：
+
+- `adapters/finder/`
 - `adapters/<future-editor>/`
 
-当前仓库还没完全到这一步。第一阶段目标是先让它独立、能跑、能装；第二阶段再把共享 runtime 抽干净。
+现在剩下的架构工作已经不是“先把共享 runtime 抽出来”，而是“在这层共享 runtime 之上继续扩更多 launch surface，同时不再分叉行为”。

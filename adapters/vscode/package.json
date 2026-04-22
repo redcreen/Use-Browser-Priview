@@ -2,7 +2,7 @@
   "name": "use-browser-priview",
   "displayName": "Use Browser Priview",
   "description": "Open local folders and Markdown in a browser preview from Codex / VS Code.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "redcreen",
   "engines": {
     "vscode": "^1.100.0"

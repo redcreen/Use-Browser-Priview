@@ -144,6 +144,14 @@ function testInstallAndUninstall() {
       "Expected Codex runtime to reuse the preview runtime.",
     );
     assert(
+      fs.existsSync(path.join(sandbox.supportDir, "codex-app", "runtime-paths.js")),
+      "Expected Codex runtime to include runtime-paths.js for shared runtime resolution.",
+    );
+    assert(
+      fs.existsSync(path.join(sandbox.supportDir, "codex-app", "packages", "runtime", "browser-preview.js")),
+      "Expected Codex runtime to include the shared browser preview runtime.",
+    );
+    assert(
       fs.existsSync(backupAppPath),
       "Expected installer to create a clean backup Codex app bundle.",
     );

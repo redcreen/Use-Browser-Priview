@@ -3,6 +3,7 @@
 const fs = require("fs");
 const vscode = require("vscode");
 const {
+  computeAdapterCodeStamp,
   computeRuntimeCodeStamp,
   getRuntimeWatchPaths,
   loadRuntimeModule,
@@ -33,7 +34,7 @@ class HotReloadingWorkspaceDocBrowser {
   watchRuntimeFiles() {
     const listeners = [];
     const onWatchTick = () => {
-      const nextStamp = computeRuntimeCodeStamp();
+      const nextStamp = computeAdapterCodeStamp();
       if ((this.runtimeStamp && nextStamp === this.runtimeStamp) || this.runtimeDirty) {
         return;
       }
@@ -67,12 +68,12 @@ class HotReloadingWorkspaceDocBrowser {
     }
     return runtime.createWorkspaceDocBrowser(this.context, {
       output: this.output,
-      runtimeCodeStamp: runtimeStamp,
+      runtimeCodeStamp: computeRuntimeCodeStamp(),
     });
   }
 
   async ensureRuntimeController() {
-    const nextStamp = computeRuntimeCodeStamp();
+    const nextStamp = computeAdapterCodeStamp();
     if (this.runtimeController && !this.runtimeDirty && nextStamp === this.runtimeStamp) {
       return this.runtimeController;
     }

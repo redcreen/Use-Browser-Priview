@@ -7,17 +7,25 @@ const fs = require("fs");
 const net = require("net");
 const os = require("os");
 const path = require("path");
+const { resolveSharedRuntimePath } = require("./runtime-paths");
 const {
   canonicalPath,
   loadSharedSessions,
   resolveReusableSessionRecord,
   saveSharedSessions,
   storeSessionRecord,
-} = require("./session-store");
+} = require(resolveSharedRuntimePath("session-store.js"));
 const {
   computeRuntimeCodeStamp,
   loadRuntimeModule,
-} = require("./runtime-loader");
+} = require(resolveSharedRuntimePath("runtime-loader.js"));
+const {
+  findFreePort,
+  findWorkspaceRoot,
+  getAbsoluteTargetUrl,
+  isPortReachable,
+  waitForPortReady,
+} = require(resolveSharedRuntimePath("browser-preview.js"));
 
 const SESSION_DIR = path.join(os.homedir(), ".codex", "workspace-doc-browser", "finder");
 const SESSION_FILE = path.join(SESSION_DIR, "sessions.json");
@@ -170,130 +178,7 @@ function getTargetDescriptor(workspaceRoot, targetPath) {
 }
 
 function getTargetUrl(baseUrl, workspaceRoot, targetPath) {
-  const descriptor = getTargetDescriptor(workspaceRoot, targetPath);
-  if (isPreviewableKind(descriptor.kind)) {
-    return getPreviewUrl(baseUrl, descriptor.relativePath, descriptor.kind);
-  }
-  return new URL(encodePathSegments(descriptor.relativePath), `${String(baseUrl || "").replace(/\/$/, "")}/`).toString();
-}
-
-function allocateEphemeralPort() {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      const port = address && typeof address === "object" ? address.port : null;
-      server.close((error) => {
-        if (error) {
-          reject(error);
-        } else if (port) {
-          resolve(port);
-        } else {
-          reject(new Error("Failed to allocate a local preview port."));
-        }
-      });
-    });
-  });
-}
-
-function waitForPortReady(port, attempts = 120, delayMs = 100) {
-  return new Promise((resolve, reject) => {
-    let remaining = attempts;
-
-    const tryConnect = () => {
-      const socket = net.createConnection({ port, host: "127.0.0.1" });
-      socket.once("connect", () => {
-        socket.destroy();
-        resolve();
-      });
-      socket.once("error", () => {
-        socket.destroy();
-        remaining -= 1;
-        if (remaining <= 0) {
-          reject(new Error(`Timed out waiting for local docs server on port ${port}`));
-        } else {
-          setTimeout(tryConnect, delayMs);
-        }
-      });
-    };
-
-    tryConnect();
-  });
-}
-
-function waitForPortReleased(port, attempts = 120, delayMs = 100) {
-  return new Promise((resolve, reject) => {
-    let remaining = attempts;
-
-    const tryCheck = () => {
-      isPortReachable(port).then((reachable) => {
-        if (!reachable) {
-          resolve();
-          return;
-        }
-        remaining -= 1;
-        if (remaining <= 0) {
-          reject(new Error(`Timed out waiting for local docs server on port ${port} to stop.`));
-          return;
-        }
-        setTimeout(tryCheck, delayMs);
-      }).catch(reject);
-    };
-
-    tryCheck();
-  });
-}
-
-function isPortReachable(port, host = "127.0.0.1") {
-  return new Promise((resolve) => {
-    const socket = net.createConnection({ port, host });
-    const finish = (result) => {
-      socket.destroy();
-      resolve(result);
-    };
-    socket.once("connect", () => finish(true));
-    socket.once("error", () => finish(false));
-  });
-}
-
-function canBindPort(port) {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on("error", (error) => {
-      if (error && error.code === "EADDRINUSE") {
-        resolve(false);
-        return;
-      }
-      reject(error);
-    });
-    server.listen(port, "127.0.0.1", () => {
-      server.close((error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(true);
-        }
-      });
-    });
-  });
-}
-
-async function findFreePort(preferredPort = null) {
-  const preferred = Number(preferredPort);
-  if (Number.isInteger(preferred) && preferred > 0) {
-    try {
-      await waitForPortReleased(preferred);
-    } catch {}
-    try {
-      if (await canBindPort(preferred)) {
-        return preferred;
-      }
-    } catch {}
-  }
-  return allocateEphemeralPort();
+  return getAbsoluteTargetUrl(baseUrl, workspaceRoot, targetPath);
 }
 
 function ensureSessionDir() {
@@ -500,22 +385,6 @@ function resolveSelectionPath(selectedPath) {
     workspaceRoot,
     targetPath: absolutePath,
   };
-}
-
-function findWorkspaceRoot(startDirectory) {
-  let current = canonicalPath(startDirectory);
-  while (true) {
-    for (const marker of [".git", ".hg", ".svn"]) {
-      if (fs.existsSync(path.join(current, marker))) {
-        return current;
-      }
-    }
-    const parent = path.dirname(current);
-    if (parent === current) {
-      return canonicalPath(startDirectory);
-    }
-    current = parent;
-  }
 }
 
 async function main() {

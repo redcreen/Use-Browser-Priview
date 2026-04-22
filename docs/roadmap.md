@@ -6,10 +6,10 @@
 
 | Item | Current Value |
 | --- | --- |
-| Stage Progress | 1 / 4 stages in progress |
-| Current Stage | Stage 1: Standalone Repo Baseline |
-| Current Objective | keep preview feature changes hot-loadable without restarting Extension Host while preserving Finder reuse and same-root port rules |
-| Next Queued Slice | `shared runtime extraction` |
+| Stage Progress | 2 / 4 stages complete |
+| Current Stage | Stage 2: Shared Runtime Extraction |
+| Current Objective | keep all preview behavior inside `packages/runtime/` while preserving hot updates, cross-surface reuse, and installability |
+| Next Queued Slice | `editor adapter expansion` |
 | Detailed Drill-Down | [reference/use-browser-priview/development-plan.md](reference/use-browser-priview/development-plan.md) |
 
 ## Milestone Rules
@@ -20,7 +20,7 @@
 
 ## Stage 1: Standalone Repo Baseline
 
-Status: in progress
+Status: complete
 
 Goal:
 - move ownership out of `project-assistant`
@@ -34,7 +34,7 @@ Exit:
 
 ## Stage 2: Shared Runtime Extraction
 
-Status: next
+Status: complete
 
 Goal:
 - extract browser preview runtime into a shared package
@@ -48,7 +48,7 @@ Exit:
 
 ## Stage 3: Additional Editor Adapters
 
-Status: queued
+Status: next
 
 Goal:
 - support more editors that can contribute a context-menu action

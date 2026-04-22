@@ -33,10 +33,10 @@ install_runtime() {
   local runtime_dir="$1"
   rm -rf "$runtime_dir"
   mkdir -p "$runtime_dir"
-  cp "$VSCODE_ADAPTER_DIR/extension.js" "$runtime_dir/"
   cp "$VSCODE_ADAPTER_DIR/open-finder-preview.js" "$runtime_dir/"
-  cp "$VSCODE_ADAPTER_DIR/session-store.js" "$runtime_dir/"
-  cp "$VSCODE_ADAPTER_DIR/package.json" "$runtime_dir/"
+  cp "$VSCODE_ADAPTER_DIR/runtime-paths.js" "$runtime_dir/"
+  mkdir -p "$runtime_dir/packages"
+  cp -R "$REPO_ROOT/packages/runtime" "$runtime_dir/packages/"
   cp "$CODEX_ADAPTER_DIR/open-codex-preview.sh" "$runtime_dir/"
   chmod +x "$runtime_dir/open-codex-preview.sh"
 }

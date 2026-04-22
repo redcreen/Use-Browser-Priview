@@ -44,7 +44,11 @@
 - `node --check adapters/vscode/extension.js`
 - `node --check adapters/vscode/extension-runtime.js`
 - `node --check adapters/vscode/runtime-loader.js`
+- `node --check adapters/vscode/runtime-paths.js`
 - `node --check adapters/vscode/open-finder-preview.js`
+- `node --check packages/runtime/browser-preview.js`
+- `node --check packages/runtime/runtime-loader.js`
+- `node --check packages/runtime/session-store.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
 - `bash -n adapters/vscode/install-macos-finder-quick-action.sh`
 - `node --check adapters/codex-app/patch-codex-open-with.js`
@@ -62,6 +66,7 @@
 - 代码升级后端口复用约束：`node tests/validate-port-reuse-after-upgrade.mjs`
 - 安全 Markdown 字号约束：`node tests/validate-safe-text-size-contract.mjs`
 - 前进后退位置恢复约束：`node tests/validate-scroll-restoration-contract.mjs`
+- 共享 runtime 抽离约束：`node tests/validate-shared-runtime-layout.mjs`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`
 - Codex 桌面 patch 约束：`node tests/validate-codex-app-patch.mjs`
 
@@ -74,6 +79,7 @@
 - 安装可选 patch 并重开 Codex 后，在 Codex 文件链接右键的 `Open With` 里能看到 `Use Browser Priview`
 - Codex / VS Code 不再出现 `Docs Live` 或 `Use Browser Priview` 状态栏按钮
 - Finder 和编辑器两个入口打开后，看到的是同一类浏览器预览体验
+- 已安装的 VS Code、Finder 和 Codex-app runtime 都带上 `packages/runtime/`，而不是继续依赖某个 adapter 私有 runtime 副本
 
 ## 测试数据与夹具
 

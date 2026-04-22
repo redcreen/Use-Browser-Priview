@@ -28,9 +28,9 @@
 
 ## 当前发布基线
 
-- 当前版本文件：`0.0.2`
-- 当前发布 tag 目标：`v0.0.2`
-- 远程安装示例应使用 `https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.2/install.sh`
+- 当前版本文件：`0.0.3`
+- 当前发布 tag 目标：`v0.0.3`
+- 远程安装示例应使用 `https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.3/install.sh`
 
 ## 验证说明
 

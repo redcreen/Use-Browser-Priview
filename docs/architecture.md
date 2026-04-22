@@ -41,15 +41,21 @@ Each host-specific adapter is packaged independently so it can match the host's 
 
 The Codex desktop patch path uses a staged app-bundle swap with a clean backup bundle. It does not mutate `Resources/app.asar` in place.
 
-## Current Transitional State
+## Current Runtime Shape
 
-The repo has just been extracted from a VS Code-centric implementation. The current state is intentionally transitional:
+The shared runtime is now extracted into `packages/runtime/`:
 
-- the first runnable preview runtime still lives with the VS Code adapter code
-- the Finder launcher reuses that runtime rather than creating a second implementation
-- the next architecture milestone is to extract a shared runtime package that all adapters can consume directly
+- `packages/runtime/browser-preview.js`: shared browser preview engine and raw server builder
+- `packages/runtime/session-store.js`: shared same-root session and port reuse rules
+- `packages/runtime/runtime-loader.js`: shared runtime code stamp and fresh-load entry
 
-This is acceptable for the first standalone cut because it removes repo ownership coupling first, then removes internal runtime coupling second.
+The host-specific surfaces now sit on top of that layer:
+
+- `adapters/vscode/extension.js`: stable Extension Host shell with hot-update detection
+- `adapters/vscode/extension-runtime.js`: thin VS Code bridge that turns editor context into shared runtime calls
+- `adapters/vscode/open-finder-preview.js`: Finder/Codex-app launcher that targets the same shared runtime
+
+This means Finder and VS Code no longer depend on `adapters/vscode/extension.js` or one adapter-owned session-store file as their runtime truth.
 
 ## Boundary Rules
 
@@ -61,13 +67,18 @@ This is acceptable for the first standalone cut because it removes repo ownershi
 - Codex desktop patching concerns stay inside `adapters/codex-app/` so the normal VS Code / Finder paths do not inherit app-bundle patch logic.
 - The current VS Code adapter is intentionally right-click only. Persistent UI such as startup-driven `Docs Live` status indicators stays out of the adapter surface.
 
-## Future Extraction Target
+## Next Extraction Target
 
-The target steady-state shape is:
+The current steady-state shape is:
 
 - `packages/runtime/`
-- `adapters/finder/`
 - `adapters/vscode/`
+- `adapters/codex-app/`
+- Finder Quick Action runtime installed from the repo
+
+The next structure target is:
+
+- `adapters/finder/`
 - `adapters/<future-editor>/`
 
-The current repo is not there yet. The first milestone is to make the product independent and runnable; the second milestone is to finish the runtime extraction.
+The remaining architecture work is no longer "extract the shared runtime"; it is "add more launch surfaces on top of the extracted runtime without forking behavior."

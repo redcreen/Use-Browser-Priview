@@ -3,24 +3,21 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
-const { resolveSharedRuntimePath } = require("./runtime-paths");
-const sharedRuntimeLoader = require(resolveSharedRuntimePath("runtime-loader.js"));
 
 const LOADER_PATH = __filename;
-const RUNTIME_ENTRY_PATH = path.join(__dirname, "extension-runtime.js");
-const ADAPTER_PACKAGE_PATH = path.join(__dirname, "package.json");
+const BROWSER_PREVIEW_PATH = path.join(__dirname, "browser-preview.js");
+const SESSION_STORE_PATH = path.join(__dirname, "session-store.js");
 const RUNTIME_WATCH_PATHS = [
   LOADER_PATH,
-  RUNTIME_ENTRY_PATH,
-  ADAPTER_PACKAGE_PATH,
-  ...sharedRuntimeLoader.getRuntimeWatchPaths(),
+  BROWSER_PREVIEW_PATH,
+  SESSION_STORE_PATH,
 ];
 
 function getRuntimeWatchPaths() {
   return RUNTIME_WATCH_PATHS.slice();
 }
 
-function computeAdapterCodeStamp() {
+function computeRuntimeCodeStamp() {
   const hash = crypto.createHash("sha1");
   for (const watchPath of RUNTIME_WATCH_PATHS) {
     hash.update(watchPath);
@@ -33,12 +30,8 @@ function computeAdapterCodeStamp() {
   return hash.digest("hex");
 }
 
-function computeRuntimeCodeStamp() {
-  return sharedRuntimeLoader.computeRuntimeCodeStamp();
-}
-
 function clearRuntimeModuleCache() {
-  for (const modulePath of [RUNTIME_ENTRY_PATH, LOADER_PATH]) {
+  for (const modulePath of [BROWSER_PREVIEW_PATH, SESSION_STORE_PATH, LOADER_PATH]) {
     try {
       delete require.cache[require.resolve(modulePath)];
     } catch {}
@@ -48,13 +41,11 @@ function clearRuntimeModuleCache() {
 function loadRuntimeModule(options = {}) {
   if (options.fresh) {
     clearRuntimeModuleCache();
-    sharedRuntimeLoader.loadRuntimeModule({ fresh: true });
   }
-  return require(RUNTIME_ENTRY_PATH);
+  return require(BROWSER_PREVIEW_PATH);
 }
 
 module.exports = {
-  computeAdapterCodeStamp,
   computeRuntimeCodeStamp,
   getRuntimeWatchPaths,
   loadRuntimeModule,

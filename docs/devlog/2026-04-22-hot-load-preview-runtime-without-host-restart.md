@@ -21,8 +21,8 @@ Split the adapter into a thin `extension.js` shell and a hot-loaded `extension-r
 
 ## Follow-Ups
 
-- keep routine preview feature work inside `adapters/vscode/extension-runtime.js` so hot updates stay within the stable shell boundary
+- keep routine preview feature work inside `packages/runtime/browser-preview.js` so hot updates stay within the stable shell boundary and do not fork by host
 
 ## Related Files
 
-- `adapters/vscode/extension.js`, `adapters/vscode/extension-runtime.js`, `adapters/vscode/runtime-loader.js`, `adapters/vscode/open-finder-preview.js`, `install.sh`, `README.md`, `README.zh-CN.md`, `.codex/brief.md`, `.codex/status.md`
+- `adapters/vscode/extension.js`, `adapters/vscode/extension-runtime.js`, `adapters/vscode/runtime-loader.js`, `packages/runtime/browser-preview.js`, `packages/runtime/runtime-loader.js`, `install.sh`, `README.md`, `README.zh-CN.md`, `.codex/brief.md`, `.codex/status.md`

@@ -18,6 +18,10 @@ const runtimeSource = fs.readFileSync(
   path.join(repoRoot, "adapters", "vscode", "extension-runtime.js"),
   "utf8",
 );
+const sharedRuntimeSource = fs.readFileSync(
+  path.join(repoRoot, "packages", "runtime", "browser-preview.js"),
+  "utf8",
+);
 
 assert.deepEqual(
   adapterPackage.activationEvents,
@@ -63,12 +67,21 @@ assert(
   "Expected extension.js to load the runtime dynamically so the Extension Host does not need a restart for runtime updates.",
 );
 assert(
+  extensionSource.includes("computeAdapterCodeStamp"),
+  "Expected extension.js to track adapter-layer hot updates separately from the shared runtime code stamp.",
+);
+assert(
   extensionSource.includes("Preview runtime changed on disk. The next preview action will use the latest code without restarting Extension Host."),
   "Expected extension.js to advertise hot updates without restarting the Extension Host.",
 );
 assert(
   runtimeSource.includes("class WorkspaceDocBrowser"),
-  "Expected extension-runtime.js to keep the preview runtime implementation.",
+  "Expected extension-runtime.js to keep the VS Code bridge implementation.",
+);
+assert(
+  sharedRuntimeSource.includes("function buildRawFileServerScript(") &&
+    sharedRuntimeSource.includes("function buildBootstrapViewerHtml("),
+  "Expected packages/runtime/browser-preview.js to keep the shared preview runtime implementation.",
 );
 
 console.log("validate-vscode-adapter: ok");

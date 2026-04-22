@@ -10,7 +10,7 @@ const {
   deleteSessionRecord,
   resolveReusableSessionRecord,
   storeSessionRecord,
-} = await import(path.join(repoRoot, "adapters", "vscode", "session-store.js"));
+} = await import(path.join(repoRoot, "packages", "runtime", "session-store.js"));
 
 async function main() {
   const reachablePorts = new Set([43111, 43112]);

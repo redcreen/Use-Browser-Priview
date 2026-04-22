@@ -1,14 +1,14 @@
 {
   "name": "use-browser-priview",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Standalone browser preview project for Finder and editor context menus.",
   "scripts": {
     "install:all": "bash install.sh --all",
     "install:vscode": "bash install.sh --vscode",
     "install:finder": "bash install.sh --finder",
     "install:codex-app": "bash install.sh --codex-app",
-    "check:vscode-adapter": "node --check adapters/vscode/extension.js && node --check adapters/vscode/extension-runtime.js && node --check adapters/vscode/runtime-loader.js && node --check adapters/vscode/open-finder-preview.js && bash -n adapters/vscode/open-finder-preview.sh && bash -n adapters/vscode/install-macos-finder-quick-action.sh",
+    "check:vscode-adapter": "node --check adapters/vscode/extension.js && node --check adapters/vscode/extension-runtime.js && node --check adapters/vscode/runtime-loader.js && node --check adapters/vscode/runtime-paths.js && node --check adapters/vscode/open-finder-preview.js && node --check packages/runtime/browser-preview.js && node --check packages/runtime/runtime-loader.js && node --check packages/runtime/session-store.js && bash -n adapters/vscode/open-finder-preview.sh && bash -n adapters/vscode/install-macos-finder-quick-action.sh",
     "check:codex-app": "node --check adapters/codex-app/patch-codex-open-with.js && bash -n adapters/codex-app/open-codex-preview.sh && bash -n adapters/codex-app/install-codex-app.sh && bash -n adapters/codex-app/uninstall-codex-app.sh",
     "check:installers": "bash -n install.sh && bash -n install.command && bash -n install-vscode.command && bash -n install-finder.command && bash -n install-codex-app.command",
     "test:directory-readme-default": "node tests/validate-directory-readme-default.mjs",
@@ -18,10 +18,11 @@
     "test:port-reuse-after-upgrade": "node tests/validate-port-reuse-after-upgrade.mjs",
     "test:safe-text-size-contract": "node tests/validate-safe-text-size-contract.mjs",
     "test:scroll-restoration-contract": "node tests/validate-scroll-restoration-contract.mjs",
+    "test:shared-runtime-layout": "node tests/validate-shared-runtime-layout.mjs",
     "test:shared-session-store": "node tests/validate-shared-session-store.mjs",
     "test:vscode-adapter-contract": "node tests/validate-vscode-adapter.mjs",
     "test:install-flows": "node tests/validate-install-flows.mjs",
     "test:codex-app-patch": "node tests/validate-codex-app-patch.mjs",
-    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:markdown-link-href-normalization-contract && npm run test:port-reuse-after-upgrade && npm run test:safe-text-size-contract && npm run test:scroll-restoration-contract && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch"
+    "test": "npm run check:vscode-adapter && npm run check:codex-app && npm run check:installers && npm run test:vscode-adapter-contract && npm run test:html-preview-contract && npm run test:directory-readme-default && npm run test:markdown-link-href-normalization-contract && npm run test:port-reuse-after-upgrade && npm run test:safe-text-size-contract && npm run test:scroll-restoration-contract && npm run test:shared-runtime-layout && npm run test:shared-session-store && npm run test:finder-shared-session-reuse && npm run test:install-flows && npm run test:codex-app-patch"
   }
 }

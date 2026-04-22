@@ -8,6 +8,7 @@ This directory records durable implementation narratives: what went wrong, what 
 
 ## Entries
 
+- [Extract shared preview runtime](2026-04-22-extract-shared-preview-runtime.md)
 - [Hot-load preview runtime without host restart](2026-04-22-hot-load-preview-runtime-without-host-restart.md)
 - [Support safe text sizes inside Markdown tables](2026-04-22-support-safe-text-sizes-inside-markdown-tables.md)
 - [Preserve preview ports across runtime upgrades](2026-04-22-preserve-preview-ports-across-runtime-upgrades.md)

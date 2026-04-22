@@ -2,13 +2,13 @@
 
 ## Current Phase
 
-Preview runtime hot-reload convergence.
+Shared runtime extracted and baseline human-usable.
 
 ## Current Execution Line
 
-- Objective: keep preview feature changes hot-loadable without restarting Extension Host while preserving Finder reuse and same-root port rules
-- Plan Link: preview runtime hot-reload convergence
-- Runway: one runtime-shell convergence pass
+- Objective: keep all preview behavior inside `packages/runtime/` while preserving hot updates, cross-surface reuse, and installability
+- Plan Link: shared runtime extraction
+- Runway: one extraction closeout pass
 - Progress: 3 / 3 tasks complete
 - Stop Conditions:
   - blocker requires human direction
@@ -20,9 +20,9 @@ Preview runtime hot-reload convergence.
 
 ## Execution Tasks
 
-- [x] EL-1 split the VS Code adapter shell from the preview runtime so feature work can hot-load without restarting Extension Host
-- [x] EL-2 keep Finder and shared-session flows on the same runtime contract without importing `vscode`
-- [x] EL-3 update install/docs/governance language so host restart is no longer the update path
+- [x] EL-1 move shared browser preview logic into `packages/runtime/`
+- [x] EL-2 rewire VS Code, Finder, and Codex-app launch paths onto the shared runtime
+- [x] EL-3 update install/docs/governance language so `packages/runtime/` is the durable runtime truth
 
 ## Development Log Capture
 
@@ -40,11 +40,11 @@ Preview runtime hot-reload convergence.
 
 ## Architecture Supervision
 - Signal: `green`
-- Signal Basis: a stable shell/runtime boundary now carries routine preview changes, while Finder consumes the same runtime contract without importing editor-only modules
-- Problem Class: runtime hot-update and cross-surface convergence
-- Root Cause Hypothesis: when mutable preview behavior lives in the extension host entrypoint, feature work regresses into host restarts and non-editor consumers inherit editor-only dependencies
-- Correct Layer: stable shell, hot-loaded runtime, Finder-safe exports, and durable install/docs guidance
-- Rejected Shortcut: keeping all preview logic in `extension.js` and treating host restart as the update mechanism
+- Signal Basis: the repo now has one extracted preview runtime that ships into every installed surface, so the next scaling proof is whether new editor adapters can stay thin on top of it
+- Problem Class: shared runtime extraction and multi-surface convergence
+- Root Cause Hypothesis: if preview behavior drifts back into one host adapter, future surfaces will clone behavior and regress into layout coupling again
+- Correct Layer: `packages/runtime/` as the only preview engine, thin launchers, and durable install/test coverage
+- Rejected Shortcut: leaving the runtime split only at the VS Code shell boundary and continuing to ship adapter-local runtime copies
 - Automatic Review Trigger: no automatic trigger is currently active
 - Escalation Gate: continue automatically
 

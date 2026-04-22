@@ -43,7 +43,11 @@ This project is risky in three places:
 - `node --check adapters/vscode/extension.js`
 - `node --check adapters/vscode/extension-runtime.js`
 - `node --check adapters/vscode/runtime-loader.js`
+- `node --check adapters/vscode/runtime-paths.js`
 - `node --check adapters/vscode/open-finder-preview.js`
+- `node --check packages/runtime/browser-preview.js`
+- `node --check packages/runtime/runtime-loader.js`
+- `node --check packages/runtime/session-store.js`
 - `bash -n adapters/vscode/open-finder-preview.sh`
 - `bash -n adapters/vscode/install-macos-finder-quick-action.sh`
 - `node --check adapters/codex-app/patch-codex-open-with.js`
@@ -61,6 +65,7 @@ This project is risky in three places:
 - port reuse after upgrade contract via `node tests/validate-port-reuse-after-upgrade.mjs`
 - safe Markdown text-size contract via `node tests/validate-safe-text-size-contract.mjs`
 - back / forward position restore contract via `node tests/validate-scroll-restoration-contract.mjs`
+- shared runtime extraction contract via `node tests/validate-shared-runtime-layout.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 - Codex desktop patch contract via `node tests/validate-codex-app-patch.mjs`
 
@@ -73,6 +78,7 @@ This project is risky in three places:
 - Codex app file-link right click shows `Open With` -> `Use Browser Priview` after the optional patch is installed and Codex is relaunched
 - Codex / VS Code does not show a `Docs Live` or `Use Browser Priview` status-bar button
 - editor right-click and Finder right-click both land in the same preview behavior family
+- installed VS Code, Finder, and Codex-app runtimes each carry `packages/runtime/` instead of depending on an adapter-local runtime copy
 
 ## Test Data and Fixtures
 

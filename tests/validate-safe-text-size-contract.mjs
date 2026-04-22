@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), "..");
-const runtimeSource = fs.readFileSync(path.join(repoRoot, "adapters", "vscode", "extension-runtime.js"), "utf8");
+const runtimeSource = fs.readFileSync(path.join(repoRoot, "packages", "runtime", "browser-preview.js"), "utf8");
 
 assert(runtimeSource.includes("safeTextSizeClassMap"), "Expected safe text size whitelist to be defined in the preview runtime.");
 assert(runtimeSource.includes("\\[\\[size:(sm|base|lg|xl|2xl)\\|"), "Expected inline safe text size syntax to be recognized.");

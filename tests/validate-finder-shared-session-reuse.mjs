@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const sourceRepoRoot = path.resolve(path.dirname(__filename), "..");
 const require = createRequire(import.meta.url);
-const { computeRuntimeCodeStamp } = require(path.join(sourceRepoRoot, "adapters", "vscode", "runtime-loader.js"));
+const { computeRuntimeCodeStamp } = require(path.join(sourceRepoRoot, "packages", "runtime", "runtime-loader.js"));
 
 async function allocateListeningPort() {
   return await new Promise((resolve, reject) => {

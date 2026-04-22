@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_RELEASE_REF="${USE_BROWSER_PRIVIEW_RELEASE_REF:-v0.0.2}"
+DEFAULT_RELEASE_REF="${USE_BROWSER_PRIVIEW_RELEASE_REF:-v0.0.3}"
 DEFAULT_ARCHIVE_SOURCE="https://codeload.github.com/redcreen/Use-Browser-Priview/tar.gz/refs/tags/${DEFAULT_RELEASE_REF}"
 REPO_ROOT=""
 ADAPTER_DIR=""
@@ -22,9 +22,9 @@ Usage:
   bash install.sh --help
 
 Remote:
-  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash
-  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --vscode
-  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh | bash -s -- --codex-app
+  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.3/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.3/install.sh | bash -s -- --vscode
+  curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/v0.0.3/install.sh | bash -s -- --codex-app
 
 Modes:
   --all      Install both the VS Code adapter and Finder Quick Action
@@ -168,12 +168,18 @@ install_tree() {
   cp -R "$source_dir/." "$target_dir/"
 }
 
+install_shared_runtime() {
+  local target_dir="$1"
+  install_tree "$REPO_ROOT/packages/runtime" "$target_dir/packages/runtime"
+}
+
 install_vscode() {
   local target_dir="${EXTENSIONS_DIR}/${extension_id}-${version}"
   mkdir -p "$EXTENSIONS_DIR"
   remove_extension_family "$extension_id"
   remove_extension_family "redcreen.workspace-doc-browser"
   install_tree "$ADAPTER_DIR" "$target_dir"
+  install_shared_runtime "$target_dir"
   echo "Installed VS Code / Codex adapter -> $target_dir"
   echo "Runtime updates hot-load without restarting the Extension Host."
   echo "If this is the first install in an already-open Codex / VS Code window and the menu does not appear yet, reopen the window once."
@@ -186,6 +192,7 @@ install_finder() {
     exit 1
   fi
   install_tree "$ADAPTER_DIR" "$FINDER_RUNTIME_DIR"
+  install_shared_runtime "$FINDER_RUNTIME_DIR"
   if [ ! -f "$finder_installer" ]; then
     echo "Missing Finder installer: $finder_installer" >&2
     exit 1
