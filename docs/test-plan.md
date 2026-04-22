@@ -24,6 +24,7 @@ This project is risky in three places:
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Directory browsing | browser already opened on a folder | Click into a child directory | Directory listing opens and stays in the same preview model |
 | Directory README default landing | The directory contains `README.md` | Open that directory from Finder, VS Code / Codex, or an in-browser directory link | Preview lands on the directory `README.md` instead of stopping on the directory listing first |
+| Markdown angle-bracket link targets | Markdown contains `[title](<../../path/to/file.md>)` or an external link with `&` query params | Click the link | Relative targets resolve correctly and the resulting href does not leak `&gt;` / `&amp;` entities |
 | Back / forward position restore | Multiple pages have already been opened in the same preview tab | Scroll down, open another page, then use browser back / forward | Returning to the earlier page restores the previously remembered scroll position instead of jumping to the top |
 | Markdown cross-link | browser already opened on a Markdown file | Click a relative Markdown link | Target Markdown opens as rendered preview, not a raw download |
 | HTML page preview | browser opened on an `.htm` or `.html` file | Open the file through the preview flow | The file renders as an HTML page instead of plain text |
@@ -51,6 +52,7 @@ This project is risky in three places:
 - local preview smoke test via `WORKSPACE_DOC_BROWSER_NO_OPEN=1 node adapters/vscode/open-finder-preview.js <path>`
 - HTML preview contract via `node tests/validate-html-preview-contract.mjs`
 - directory README default contract via `node tests/validate-directory-readme-default.mjs`
+- markdown link href normalization contract via `node tests/validate-markdown-link-href-normalization-contract.mjs`
 - back / forward position restore contract via `node tests/validate-scroll-restoration-contract.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 - Codex desktop patch contract via `node tests/validate-codex-app-patch.mjs`

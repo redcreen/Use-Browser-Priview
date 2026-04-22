@@ -1780,6 +1780,23 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
       };
     }
 
+    function decodeHtmlEntities(value) {
+      return String(value || "")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+    }
+
+    function normalizeMarkdownHref(value) {
+      const decoded = decodeHtmlEntities(value).trim();
+      if (decoded.startsWith("<") && decoded.endsWith(">")) {
+        return decoded.slice(1, -1).trim();
+      }
+      return decoded;
+    }
+
     function resolveRelativePath(basePath, targetPath) {
       const normalizedBase = String(basePath || "").replace(/^\\/+/, "");
       const normalizedTarget = String(targetPath || "").replace(/^\\/+/, "");
@@ -1816,7 +1833,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     }
 
     function resolvePreviewHref(href) {
-      const raw = String(href || "").trim();
+      const raw = normalizeMarkdownHref(href);
       if (!raw) {
         return "";
       }
@@ -1849,7 +1866,7 @@ function buildBootstrapViewerHtml(workspaceName, relativePath, resourceKind, tre
     }
 
     function resolveInlineImageSrc(href) {
-      const raw = String(href || "").trim();
+      const raw = normalizeMarkdownHref(href);
       if (!raw) {
         return "";
       }
