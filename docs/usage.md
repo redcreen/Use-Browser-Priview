@@ -86,6 +86,8 @@ You can still use **bold**, `code`, and [links](./README.md).
 - `xl`
 - `2xl`
 
+`sm` is intentionally the compact label size. Use it for dense metadata such as image-table stats or secondary notes.
+
 ### Limits
 
 - arbitrary `<span style="font-size: ...">` is not supported
