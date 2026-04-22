@@ -173,6 +173,8 @@ bash adapters/codex-app/uninstall-codex-app.sh
 
 ## How To Use
 
+For the full user guide, see [Usage Guide](docs/usage.md).
+
 ### In VS Code / Codex
 
 1. Open a local Markdown file.
@@ -245,6 +247,7 @@ Run the same install command again:
 ## Docs
 
 - [Docs Home](docs/README.md)
+- [Usage Guide](docs/usage.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Test Plan](docs/test-plan.md)

@@ -32,8 +32,8 @@ standalone baseline release closeout
 
 ## Development Log Capture
 - Trigger Level: high
-- Pending Capture: no
-- Reason: latest devlog already captures the most recent durable reasoning
+- Pending Capture: yes
+- Reason: commits landed after the latest devlog and changed durable repo surfaces; latest examples: feat: add safe markdown text-size syntax
 - Last Entry: `docs/devlog/2026-04-22-preserve-preview-ports-across-runtime-upgrades.md`
 
 ## Architecture Supervision

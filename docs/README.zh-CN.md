@@ -4,6 +4,7 @@
 
 ## 从这里开始
 - 快速了解项目：[README](../README.zh-CN.md)
+- 使用说明：[usage.zh-CN.md](usage.zh-CN.md)
 - 架构：[architecture.zh-CN.md](architecture.zh-CN.md)
 - 路线图：[roadmap.zh-CN.md](roadmap.zh-CN.md)
 - 测试：[test-plan.zh-CN.md](test-plan.zh-CN.md)
@@ -17,6 +18,7 @@
 | 目标 | 阅读这里 |
 | --- | --- |
 | 快速试用项目 | [README](../README.zh-CN.md) |
+| 查看日常使用方式和支持的语法 | [usage.zh-CN.md](usage.zh-CN.md) |
 | 了解产品结构 | [architecture.zh-CN.md](architecture.zh-CN.md) |
 | 了解交付顺序 | [roadmap.zh-CN.md](roadmap.zh-CN.md) |
 | 了解验证方式 | [test-plan.zh-CN.md](test-plan.zh-CN.md) |

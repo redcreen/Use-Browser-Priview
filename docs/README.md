@@ -4,6 +4,7 @@
 
 ## Start Here
 - Getting started: [README](../README.md)
+- Usage guide: [usage.md](usage.md)
 - Architecture: [architecture.md](architecture.md)
 - Roadmap: [roadmap.md](roadmap.md)
 - Testing: [test-plan.md](test-plan.md)
@@ -17,6 +18,7 @@
 | Goal | Read This |
 | --- | --- |
 | Try the project quickly | [README](../README.md) |
+| Learn daily usage and supported syntax | [usage.md](usage.md) |
 | Understand the product shape | [architecture.md](architecture.md) |
 | Understand delivery order | [roadmap.md](roadmap.md) |
 | Verify correctness | [test-plan.md](test-plan.md) |
