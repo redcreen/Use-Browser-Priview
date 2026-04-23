@@ -23,6 +23,7 @@ This project is risky in three places:
 | Codex app patch rollback | macOS, Codex app patch already installed | Run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex | Codex returns to the clean backup bundle and starts without the patch |
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Port reuse after runtime upgrade | The same project root already has a preview session on one port | Upgrade the runtime code, then open the same repo again from Finder or VS Code / Codex | The old preview process is stopped, the original port is reclaimed when available, and the repo stays on the same port |
+| Preview supervisor restart | A preview service is already live on one port | Manually terminate the actual preview child that is listening on that port | The supervisor starts a new preview child on the same port |
 | VS Code runtime hot update without host restart | The adapter is already active in one VS Code / Codex window | Change preview runtime code on disk, then trigger `Use Browser Priview` again without restarting the Extension Host | The next preview action uses the latest runtime code and the host process stays running |
 | Large active-path directory | Current page lives inside a directory with hundreds of sibling folders | Open the page and inspect the sidebar tree | The active branch stays visible, but the huge sibling list is deferred until the user manually expands that directory |
 | Current file directory auto expansion | Browser opens directly on a file such as `docs/architecture.zh-CN.md` | Inspect the sidebar tree immediately after the page loads | The current file's parent directory auto-expands so the active file stays visible without an extra manual click |
@@ -67,6 +68,7 @@ This project is risky in three places:
 - directory README default contract via `node tests/validate-directory-readme-default.mjs`
 - markdown link href normalization contract via `node tests/validate-markdown-link-href-normalization-contract.mjs`
 - port reuse after upgrade contract via `node tests/validate-port-reuse-after-upgrade.mjs`
+- preview supervisor restart contract via `node tests/validate-preview-supervisor-restart.mjs`
 - safe Markdown text-size contract via `node tests/validate-safe-text-size-contract.mjs`
 - focused large-directory tree loading via `node tests/validate-focused-tree-loading.mjs`
 - current file directory auto expansion via `node tests/validate-current-directory-auto-expansion.mjs`

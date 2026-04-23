@@ -33,6 +33,7 @@ bash install.sh
 - image, video, and text preview
 - local session reuse so the same workspace keeps the same port
 - the same project root keeps one local preview port across Finder, VS Code / Codex, and runtime upgrades whenever the old port can be reclaimed
+- a dedicated preview supervisor keeps the backend alive and restarts the preview child when possible after host reloads or child crashes
 
 ## Requirements
 

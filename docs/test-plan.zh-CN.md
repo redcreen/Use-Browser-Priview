@@ -24,6 +24,7 @@
 | 回滚 Codex app patch | macOS，已安装 Codex app patch | 执行 `bash adapters/codex-app/uninstall-codex-app.sh`，然后彻底退出并重开 Codex | Codex 回到 clean backup bundle，并且不再带 patch 启动 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 代码升级后的端口复用 | 同一个项目根已经占用一个预览端口 | 升级运行时代码后，再从 Finder 或 VS Code / Codex 打开同一个仓库 | 先停掉旧进程，再在可回收时继续使用原端口，不悄悄换成新端口 |
+| 预览 supervisor 重启 | 预览服务已经在某个端口启动 | 手工结束真正监听该端口的预览子进程 | supervisor 会在同一端口重新拉起新的预览子进程 |
 | VS Code 运行时热更新且不重启宿主 | 同一个 VS Code / Codex 窗口里 adapter 已经激活 | 修改磁盘上的预览运行时代码，不重启 Extension Host，再次触发 `Use Browser Priview` | 下一次预览动作直接使用最新 runtime，宿主进程保持不重启 |
 | 大目录激活路径 | 当前页面位于一个包含数百个同级目录的大目录树中 | 打开该页面并观察左侧树 | 首屏只保证激活路径可见，不一次性展开完整同级目录；手动展开后才加载完整列表 |
 | 当前文件所在目录自动展开 | 浏览器直接打开类似 `docs/architecture.zh-CN.md` 这样的文件页 | 页面加载后立刻观察左侧树 | 当前文件的父目录会自动展开，活动文件不需要再手动点开目录才能看到 |
@@ -68,6 +69,7 @@
 - 目录 README 默认落点约束：`node tests/validate-directory-readme-default.mjs`
 - Markdown 链接目标归一化约束：`node tests/validate-markdown-link-href-normalization-contract.mjs`
 - 代码升级后端口复用约束：`node tests/validate-port-reuse-after-upgrade.mjs`
+- 预览 supervisor 重启约束：`node tests/validate-preview-supervisor-restart.mjs`
 - 安全 Markdown 字号约束：`node tests/validate-safe-text-size-contract.mjs`
 - 大目录激活路径按需加载约束：`node tests/validate-focused-tree-loading.mjs`
 - 当前文件所在目录自动展开约束：`node tests/validate-current-directory-auto-expansion.mjs`

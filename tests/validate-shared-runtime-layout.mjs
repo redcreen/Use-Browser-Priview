@@ -21,15 +21,17 @@ const sharedRuntimeSource = fs.readFileSync(
 
 assert(
   vscodeBridgeSource.includes('resolveSharedRuntimePath("browser-preview.js")') &&
-    vscodeBridgeSource.includes('resolveSharedRuntimePath("session-store.js")'),
-  "Expected the VS Code bridge to load the shared runtime and session store through runtime-paths.js.",
+    vscodeBridgeSource.includes('resolveSharedRuntimePath("session-store.js")') &&
+    vscodeBridgeSource.includes('resolveSharedRuntimePath("preview-supervisor.js")'),
+  "Expected the VS Code bridge to load the shared runtime, session store, and preview supervisor through runtime-paths.js.",
 );
 
 assert(
   finderLauncherSource.includes('resolveSharedRuntimePath("browser-preview.js")') &&
     finderLauncherSource.includes('resolveSharedRuntimePath("runtime-loader.js")') &&
-    finderLauncherSource.includes('resolveSharedRuntimePath("session-store.js")'),
-  "Expected the Finder launcher to resolve all shared runtime modules through runtime-paths.js.",
+    finderLauncherSource.includes('resolveSharedRuntimePath("session-store.js")') &&
+    finderLauncherSource.includes('resolveSharedRuntimePath("preview-supervisor.js")'),
+  "Expected the Finder launcher to resolve all shared runtime modules, including the preview supervisor, through runtime-paths.js.",
 );
 
 assert(

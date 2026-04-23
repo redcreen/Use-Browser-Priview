@@ -17,8 +17,10 @@ const {
 } = require(resolveSharedRuntimePath("session-store.js"));
 const {
   computeRuntimeCodeStamp,
-  loadRuntimeModule,
 } = require(resolveSharedRuntimePath("runtime-loader.js"));
+const {
+  spawnPreviewSupervisor,
+} = require(resolveSharedRuntimePath("preview-supervisor.js"));
 const {
   findFreePort,
   findWorkspaceRoot,
@@ -40,16 +42,6 @@ function appendFinderLog(message) {
       "utf8",
     );
   } catch {}
-}
-
-function loadPreviewBuilders() {
-  const runtime = loadRuntimeModule({ fresh: true });
-  if (!runtime || typeof runtime.buildRawFileServerScript !== "function") {
-    throw new Error("Use Browser Priview runtime is missing buildRawFileServerScript().");
-  }
-  return {
-    buildRawFileServerScript: runtime.buildRawFileServerScript,
-  };
 }
 
 function normalizeSlashes(value) {
@@ -321,7 +313,7 @@ function openUrlInBrowser(targetUrl) {
   appendFinderLog("[finder-js] fallback open succeeded");
 }
 
-async function ensureSession(workspaceRoot, buildRawFileServerScript, codeStamp) {
+async function ensureSession(workspaceRoot, codeStamp) {
   let sessions = loadSessions();
   const sharedLookup = await resolveReusableSessionRecord(sessions, {
     requestedRoot: workspaceRoot,
@@ -343,14 +335,10 @@ async function ensureSession(workspaceRoot, buildRawFileServerScript, codeStamp)
   }
 
   const port = await findFreePort(sharedLookup.preferredPort);
-  const rawServerScript = buildRawFileServerScript(sharedLookup.requestedRoot, port);
-  const child = cp.spawn(process.execPath, ["-e", rawServerScript], {
-    cwd: sharedLookup.requestedRoot,
-    env: process.env,
+  const child = spawnPreviewSupervisor(sharedLookup.requestedRoot, port, {
     detached: true,
     stdio: "ignore",
   });
-  child.unref();
   await waitForPortReady(port);
   const nextSession = {
     workspaceRoot: sharedLookup.requestedRoot,
@@ -392,9 +380,8 @@ async function main() {
   appendFinderLog(`[finder-js] selected=${selectedPath || ""}`);
   const { workspaceRoot, targetPath } = resolveSelectionPath(selectedPath);
   appendFinderLog(`[finder-js] workspaceRoot=${workspaceRoot} targetPath=${targetPath}`);
-  const { buildRawFileServerScript } = loadPreviewBuilders();
   const codeStamp = computeCodeStamp();
-  const session = await ensureSession(workspaceRoot, buildRawFileServerScript, codeStamp);
+  const session = await ensureSession(workspaceRoot, codeStamp);
   const targetUrl = getTargetUrl(session.baseUrl, workspaceRoot, targetPath);
   appendFinderLog(`[finder-js] targetUrl=${targetUrl}`);
   if (process.env.WORKSPACE_DOC_BROWSER_NO_OPEN === "1") {

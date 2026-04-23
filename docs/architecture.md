@@ -48,6 +48,7 @@ The shared runtime is now extracted into `packages/runtime/`:
 - `packages/runtime/browser-preview.js`: shared browser preview engine and raw server builder
 - `packages/runtime/session-store.js`: shared same-root session and port reuse rules
 - `packages/runtime/runtime-loader.js`: shared runtime code stamp and fresh-load entry
+- `packages/runtime/preview-supervisor.js`: shared preview backend supervisor that keeps the actual port-listening child alive and restarts it when needed
 
 The host-specific surfaces now sit on top of that layer:
 

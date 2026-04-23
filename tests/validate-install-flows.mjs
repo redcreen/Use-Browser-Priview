@@ -133,6 +133,10 @@ function assertExtensionInstalled(sandbox) {
     fs.existsSync(path.join(installDir, "packages", "runtime", "session-store.js")),
     "Expected VS Code install to include the shared session store.",
   );
+  assert(
+    fs.existsSync(path.join(installDir, "packages", "runtime", "preview-supervisor.js")),
+    "Expected VS Code install to include the shared preview supervisor.",
+  );
 }
 
 function assertFinderInstalled(sandbox) {
@@ -148,6 +152,7 @@ function assertFinderInstalled(sandbox) {
   assert(fs.existsSync(path.join(runtimeDir, "packages", "runtime", "browser-preview.js")), "Expected Finder runtime to include the shared browser preview runtime.");
   assert(fs.existsSync(path.join(runtimeDir, "packages", "runtime", "runtime-loader.js")), "Expected Finder runtime to include the shared runtime loader.");
   assert(fs.existsSync(path.join(runtimeDir, "packages", "runtime", "session-store.js")), "Expected Finder runtime to include the shared session store.");
+  assert(fs.existsSync(path.join(runtimeDir, "packages", "runtime", "preview-supervisor.js")), "Expected Finder runtime to include the shared preview supervisor.");
   assert(fs.existsSync(path.join(workflowDir, "Contents", "Info.plist")), "Expected Finder workflow Info.plist.");
   assert(
     workflowSource.includes(path.join(runtimeDir, "open-finder-preview.sh")),

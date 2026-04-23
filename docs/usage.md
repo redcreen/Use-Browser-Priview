@@ -47,6 +47,7 @@ Port reuse follows the project root, not the subdirectory you clicked.
 - if no such marker exists, the selected folder itself becomes the root
 - the same project root keeps one preview port across Finder and VS Code / Codex
 - after runtime upgrades, the same project root still keeps the same port when that old port can be reclaimed
+- the preview backend now runs under a dedicated supervisor, so that port is no longer tied to keeping the browser tab, Finder, and VS Code / Codex alive at the same time
 - a folder outside that project root starts a different preview port
 
 ## Large Directory Behavior
@@ -115,6 +116,7 @@ When a Markdown table is being used as an image-browser grid like `search-result
 
 - VS Code still shows no menu right after the first install: reopen the current VS Code / Codex window once
 - runtime code changed but the next preview still looks old: trigger `Use Browser Priview` again so the active adapter swaps to the latest runtime
+- preview died overnight or after a host reload: inspect `~/Library/Application Support/Use Browser Priview/preview-supervisor.log` to see whether the supervisor or its preview child was terminated
 - Finder entry does not appear: right-click a folder item, not blank space
 - Codex app menu does not show `Use Browser Priview`: fully quit and reopen Codex after `--codex-app`
 - Browser does not open: make sure Node.js is installed and available in `PATH`

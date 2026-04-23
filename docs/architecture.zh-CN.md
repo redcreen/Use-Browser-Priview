@@ -48,6 +48,7 @@ Codex 桌面 patch 这条路径现在走的是“staged app bundle swap + clean 
 - `packages/runtime/browser-preview.js`：共享浏览器预览引擎和 raw server 构建逻辑
 - `packages/runtime/session-store.js`：共享的同项目根 session / 端口复用规则
 - `packages/runtime/runtime-loader.js`：共享 runtime 的 code stamp 和 fresh-load 入口
+- `packages/runtime/preview-supervisor.js`：共享预览后端 supervisor，负责把实际监听端口的预览子进程保活并在需要时重启
 
 宿主侧现在都只在这层之上做桥接：
 

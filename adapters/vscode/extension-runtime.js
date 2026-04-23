@@ -1,6 +1,5 @@
 "use strict";
 
-const cp = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { resolveSharedRuntimePath } = require("./runtime-paths");
@@ -13,8 +12,10 @@ const {
   isSameOrChildPath,
 } = require(resolveSharedRuntimePath("session-store.js"));
 const {
+  spawnPreviewSupervisor,
+} = require(resolveSharedRuntimePath("preview-supervisor.js"));
+const {
   OUTPUT_NAME,
-  buildRawFileServerScript,
   computeServerCodeStamp,
   encodePathSegments,
   findDirectoryLandingMarkdownPath,
@@ -349,11 +350,9 @@ class WorkspaceDocBrowser {
       await this.disposeSession();
 
       const baseUrl = `http://127.0.0.1:${port}/`;
-      const rawServerScript = buildRawFileServerScript(workspaceRoot, port);
-      const rawProcess = cp.spawn(process.execPath, ["-e", rawServerScript], {
-        cwd: workspaceRoot,
-        env: process.env,
-        stdio: ["ignore", "pipe", "pipe"],
+      const supervisorProcess = spawnPreviewSupervisor(workspaceRoot, port, {
+        detached: true,
+        stdio: "ignore",
       });
 
       const session = {
@@ -362,20 +361,16 @@ class WorkspaceDocBrowser {
         port,
         browserOpened: false,
         targetUri: this.normalizeTargetUri(targetUri),
-        process: rawProcess,
+        pid: supervisorProcess.pid,
+        process: supervisorProcess,
       };
       this.session = session;
       await this.persistSession(session);
       this.output.appendLine(`[start] ${workspaceRoot}`);
       this.output.appendLine(`[raw] ${baseUrl}`);
+      this.output.appendLine(`[supervisor] pid=${supervisorProcess.pid}`);
 
-      rawProcess.stdout.on("data", (chunk) => {
-        this.output.append(chunk.toString());
-      });
-      rawProcess.stderr.on("data", (chunk) => {
-        this.output.append(chunk.toString());
-      });
-      rawProcess.on("error", (error) => {
+      supervisorProcess.on("error", (error) => {
         this.clearPendingOpen();
         this.output.appendLine(`[error] ${String(error)}`);
         getVscode().window.showErrorMessage(`${OUTPUT_NAME}: ${String(error)}`);
@@ -384,19 +379,19 @@ class WorkspaceDocBrowser {
         }
         void this.clearPersistedSession(workspaceRoot);
       });
-      rawProcess.on("exit", (code, signal) => {
+      supervisorProcess.on("exit", (code, signal) => {
         this.clearPendingOpen();
-        this.output.appendLine(`[raw-exit] code=${code} signal=${signal}`);
+        this.output.appendLine(`[supervisor-exit] code=${code} signal=${signal}`);
         const wasCurrentSession = this.session === session;
         if (wasCurrentSession) {
           this.session = null;
         }
         void this.clearPersistedSession(workspaceRoot);
         if (code && code !== 0) {
-          getVscode().window.showErrorMessage(`${OUTPUT_NAME}: preview backend exited with code ${code}.`);
+          getVscode().window.showErrorMessage(`${OUTPUT_NAME}: preview supervisor exited with code ${code}.`);
           this.output.show(true);
         } else if (wasCurrentSession && signal !== "SIGTERM") {
-          getVscode().window.showWarningMessage(`${OUTPUT_NAME}: preview stopped.`);
+          getVscode().window.showWarningMessage(`${OUTPUT_NAME}: preview supervisor stopped.`);
         }
       });
 
