@@ -8,6 +8,7 @@ ADAPTER_DIR=""
 EXTENSIONS_DIR="${USE_BROWSER_PRIVIEW_VSCODE_EXTENSIONS_DIR:-$HOME/.vscode/extensions}"
 SUPPORT_DIR="${USE_BROWSER_PRIVIEW_SUPPORT_DIR:-$HOME/Library/Application Support/Use Browser Priview}"
 FINDER_RUNTIME_DIR="${USE_BROWSER_PRIVIEW_FINDER_RUNTIME_DIR:-$SUPPORT_DIR/finder-runtime}"
+CODEX_RUNTIME_DIR="${USE_BROWSER_PRIVIEW_CODEX_RUNTIME_DIR:-$SUPPORT_DIR/codex-app}"
 BOOTSTRAP_TEMP_DIR=""
 
 usage() {
@@ -173,6 +174,23 @@ install_shared_runtime() {
   install_tree "$REPO_ROOT/packages/runtime" "$target_dir/packages/runtime"
 }
 
+install_codex_runtime_tree() {
+  local target_dir="${1:-$CODEX_RUNTIME_DIR}"
+  mkdir -p "$target_dir"
+  cp "$REPO_ROOT/adapters/vscode/open-finder-preview.js" "$target_dir/"
+  cp "$REPO_ROOT/adapters/vscode/runtime-paths.js" "$target_dir/"
+  install_shared_runtime "$target_dir"
+  cp "$REPO_ROOT/adapters/codex-app/open-codex-preview.sh" "$target_dir/"
+  chmod +x "$target_dir/open-codex-preview.sh"
+}
+
+sync_installed_codex_runtime_if_present() {
+  if [ -d "$CODEX_RUNTIME_DIR" ]; then
+    install_codex_runtime_tree "$CODEX_RUNTIME_DIR"
+    echo "Synced installed Codex app runtime -> $CODEX_RUNTIME_DIR"
+  fi
+}
+
 install_vscode() {
   local target_dir="${EXTENSIONS_DIR}/${extension_id}-${version}"
   mkdir -p "$EXTENSIONS_DIR"
@@ -180,6 +198,7 @@ install_vscode() {
   remove_extension_family "redcreen.workspace-doc-browser"
   install_tree "$ADAPTER_DIR" "$target_dir"
   install_shared_runtime "$target_dir"
+  sync_installed_codex_runtime_if_present
   echo "Installed VS Code / Codex adapter -> $target_dir"
   echo "Runtime updates hot-load without restarting the Extension Host."
   echo "If this is the first install in an already-open Codex / VS Code window and the menu does not appear yet, reopen the window once."
@@ -193,6 +212,7 @@ install_finder() {
   fi
   install_tree "$ADAPTER_DIR" "$FINDER_RUNTIME_DIR"
   install_shared_runtime "$FINDER_RUNTIME_DIR"
+  sync_installed_codex_runtime_if_present
   if [ ! -f "$finder_installer" ]; then
     echo "Missing Finder installer: $finder_installer" >&2
     exit 1

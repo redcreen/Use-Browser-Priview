@@ -144,6 +144,8 @@ Finder:
 
 Use this only if you want `Use Browser Priview` inside Codex app's own file-link right-click menu.
 
+Once that patch is installed, later plain `bash install.sh`, `bash install.sh --vscode`, or `bash install.sh --finder` runs also refresh the runtime under `~/Library/Application Support/Use Browser Priview/codex-app`, so you do not need to repatch every time.
+
 Terminal:
 
 ```bash
@@ -240,7 +242,7 @@ Run the same install command again:
 - VS Code still shows the old menu right after the first install: reopen the current VS Code / Codex window once
 - runtime code changed but the next preview still looks old: trigger `Use Browser Priview` again so the active adapter swaps to the latest runtime
 - Finder entry does not appear: right-click a folder item, not blank space
-- Codex app menu does not show `Use Browser Priview`: fully quit and reopen Codex after `--codex-app`, then re-run the patch after Codex updates
+- Codex app still behaves like an older build: run a normal `bash install.sh` first to refresh the installed `codex-app` runtime, then re-run the patch only after Codex updates
 - Codex app patch needs to be removed: run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex
 - Browser does not open: make sure Node.js is installed and available in `PATH`
 

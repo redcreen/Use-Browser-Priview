@@ -72,6 +72,10 @@ function expectedFinderRuntimeDir(sandbox) {
   return path.join(sandbox.supportDir, "finder-runtime");
 }
 
+function expectedCodexRuntimeDir(sandbox) {
+  return path.join(sandbox.supportDir, "codex-app");
+}
+
 function createSourceArchive(sandbox) {
   const archivePath = path.join(sandbox.tempRoot, "use-browser-priview-source.tar.gz");
   execFileSync(
@@ -160,6 +164,45 @@ function assertFinderInstalled(sandbox) {
   );
 }
 
+function seedCodexRuntime(sandbox) {
+  const runtimeDir = expectedCodexRuntimeDir(sandbox);
+  fs.mkdirSync(path.join(runtimeDir, "packages", "runtime"), { recursive: true });
+  fs.writeFileSync(path.join(runtimeDir, "open-finder-preview.js"), "old-open-finder\n", "utf8");
+  fs.writeFileSync(path.join(runtimeDir, "runtime-paths.js"), "old-runtime-paths\n", "utf8");
+  fs.writeFileSync(path.join(runtimeDir, "open-codex-preview.sh"), "#!/usr/bin/env bash\necho old\n", "utf8");
+  fs.writeFileSync(path.join(runtimeDir, "packages", "runtime", "browser-preview.js"), "old-browser-preview\n", "utf8");
+  return runtimeDir;
+}
+
+function assertCodexRuntimeSynced(sandbox) {
+  const runtimeDir = expectedCodexRuntimeDir(sandbox);
+  assert(fs.existsSync(runtimeDir), "Expected Codex app runtime directory to exist.");
+  assert.equal(
+    fs.readFileSync(path.join(runtimeDir, "open-finder-preview.js"), "utf8"),
+    fs.readFileSync(path.join(repoRoot, "adapters", "vscode", "open-finder-preview.js"), "utf8"),
+    "Expected Codex app runtime to refresh open-finder-preview.js from the repo.",
+  );
+  assert.equal(
+    fs.readFileSync(path.join(runtimeDir, "runtime-paths.js"), "utf8"),
+    fs.readFileSync(path.join(repoRoot, "adapters", "vscode", "runtime-paths.js"), "utf8"),
+    "Expected Codex app runtime to refresh runtime-paths.js from the repo.",
+  );
+  assert.equal(
+    fs.readFileSync(path.join(runtimeDir, "open-codex-preview.sh"), "utf8"),
+    fs.readFileSync(path.join(repoRoot, "adapters", "codex-app", "open-codex-preview.sh"), "utf8"),
+    "Expected Codex app runtime to refresh open-codex-preview.sh from the repo.",
+  );
+  assert.equal(
+    fs.readFileSync(path.join(runtimeDir, "packages", "runtime", "browser-preview.js"), "utf8"),
+    fs.readFileSync(path.join(repoRoot, "packages", "runtime", "browser-preview.js"), "utf8"),
+    "Expected Codex app runtime to refresh the shared browser preview runtime from the repo.",
+  );
+  assert(
+    fs.existsSync(path.join(runtimeDir, "packages", "runtime", "preview-supervisor.js")),
+    "Expected Codex app runtime to include the shared preview supervisor.",
+  );
+}
+
 function assertMissing(targetPath, message) {
   assert(!fs.existsSync(targetPath), message);
 }
@@ -178,12 +221,15 @@ function testHelp() {
 function testVscodeOnly() {
   const sandbox = createSandbox();
   const legacyDir = seedLegacyExtension(sandbox);
+  seedCodexRuntime(sandbox);
   try {
     const output = runInstall(["--vscode"], sandbox);
     assert(output.includes("Installed VS Code / Codex adapter"), "Expected VS Code install output.");
+    assert(output.includes("Synced installed Codex app runtime"), "Expected VS Code install to refresh an already-installed Codex app runtime.");
     assert(output.includes("hot-load without restarting the Extension Host"), "Expected VS Code install to explain runtime hot loading.");
     assert(output.includes("menu does not appear yet"), "Expected VS Code install to explain the first-install fallback.");
     assertExtensionInstalled(sandbox);
+    assertCodexRuntimeSynced(sandbox);
     assertMissing(legacyDir, "Expected legacy workspace-doc-browser copy to be removed.");
     assertMissing(sandbox.workflowDir, "VS Code-only install should not create a Finder workflow.");
     assertMissing(expectedFinderRuntimeDir(sandbox), "VS Code-only install should not create Finder runtime files.");
@@ -194,10 +240,13 @@ function testVscodeOnly() {
 
 function testFinderOnly() {
   const sandbox = createSandbox();
+  seedCodexRuntime(sandbox);
   try {
     const output = runInstall(["--finder"], sandbox);
     assert(output.includes("Installed Finder Quick Action"), "Expected Finder install output.");
+    assert(output.includes("Synced installed Codex app runtime"), "Expected Finder install to refresh an already-installed Codex app runtime.");
     assertFinderInstalled(sandbox);
+    assertCodexRuntimeSynced(sandbox);
     assertMissing(sandbox.extensionsDir, "Finder-only install should not create VS Code extension directories.");
   } finally {
     fs.rmSync(sandbox.tempRoot, { recursive: true, force: true });
@@ -207,12 +256,15 @@ function testFinderOnly() {
 function testAllInstall() {
   const sandbox = createSandbox();
   const legacyDir = seedLegacyExtension(sandbox);
+  seedCodexRuntime(sandbox);
   try {
     const output = runInstall([], sandbox);
     assert(output.includes("Installed VS Code / Codex adapter"), "Expected all-install output to include the VS Code adapter.");
     assert(output.includes("Installed Finder Quick Action"), "Expected all-install output to include the Finder Quick Action.");
+    assert(output.includes("Synced installed Codex app runtime"), "Expected all-install mode to refresh an already-installed Codex app runtime.");
     assertExtensionInstalled(sandbox);
     assertFinderInstalled(sandbox);
+    assertCodexRuntimeSynced(sandbox);
     assertMissing(legacyDir, "Expected all-install mode to remove the legacy workspace-doc-browser copy.");
   } finally {
     fs.rmSync(sandbox.tempRoot, { recursive: true, force: true });
