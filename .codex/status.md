@@ -34,7 +34,7 @@ preview performance hardening
 - Trigger Level: high
 - Pending Capture: no
 - Reason: latest devlog already captures the most recent durable reasoning
-- Last Entry: `docs/devlog/2026-04-25-zzzz-sync-installed-codex-runtime-on-normal-installs.md`
+- Last Entry: `docs/devlog/2026-04-25-zzzzz-codex-app-follows-local-runtime.md`
 
 ## Architecture Supervision
 - Signal: `green`

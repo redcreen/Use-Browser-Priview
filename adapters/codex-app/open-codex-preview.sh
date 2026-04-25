@@ -10,6 +10,19 @@ log() {
   printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >>"$LOG_FILE"
 }
 
+resolve_preview_entry() {
+  local source_repo_link="$SCRIPT_DIR/source-repo"
+  local source_entry="$source_repo_link/adapters/vscode/open-finder-preview.js"
+  local installed_entry="$SCRIPT_DIR/open-finder-preview.js"
+
+  if [ -f "$source_entry" ]; then
+    printf '%s\n' "$source_entry"
+    return 0
+  fi
+
+  printf '%s\n' "$installed_entry"
+}
+
 resolve_node_bin() {
   if [ -n "${WORKSPACE_DOC_BROWSER_NODE_BIN:-}" ] && [ -x "${WORKSPACE_DOC_BROWSER_NODE_BIN:-}" ]; then
     printf '%s\n' "$WORKSPACE_DOC_BROWSER_NODE_BIN"
@@ -55,7 +68,10 @@ main() {
 
   log "[codex-wrapper] node=$node_bin"
   log "[codex-wrapper] target=$target_path"
-  "$node_bin" "$SCRIPT_DIR/open-finder-preview.js" "$target_path" >>"$LOG_FILE" 2>&1
+  local preview_entry=""
+  preview_entry="$(resolve_preview_entry)"
+  log "[codex-wrapper] preview_entry=$preview_entry"
+  "$node_bin" "$preview_entry" "$target_path" >>"$LOG_FILE" 2>&1
 }
 
 main "$@"

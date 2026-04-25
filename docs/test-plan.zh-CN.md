@@ -21,6 +21,7 @@
 | 只装 Finder | macOS，尚未安装 Finder 路径 | 执行 `bash install.sh --finder`，然后在 Finder 里对文件夹项右键 | Finder Quick Action 出现且可用，不依赖 VS Code 扩展安装 |
 | 全量安装 | macOS，干净环境或历史安装环境 | 执行 `bash install.sh` | VS Code 和 Finder 两条入口一次安装完成 |
 | 安装 Codex app patch | macOS，已安装 Codex 桌面 app | 执行 `bash install.sh --codex-app`，彻底退出并重开 Codex，然后在 Codex 里对文件链接右键 | `Open With` 里出现 `Use Browser Priview`，且不影响普通 VS Code / Finder 安装路径 |
+| Codex app 跟随本地仓库 runtime | Codex app patch 是从当前本地仓库装上的 | 修改这个仓库里的预览 runtime，然后不重新安装，直接从 Codex 再打开一个文件链接 | 已安装的 Codex wrapper 会回到当前仓库解析入口，直接使用最新本地 runtime，而不是继续吃旧副本 |
 | 回滚 Codex app patch | macOS，已安装 Codex app patch | 执行 `bash adapters/codex-app/uninstall-codex-app.sh`，然后彻底退出并重开 Codex | Codex 回到 clean backup bundle，并且不再带 patch 启动 |
 | 跨入口端口复用 | 已经从 VS Code 或 Finder 打开过同一个仓库的预览 | 再从另一条入口打开这个仓库里的子目录 | 复用已有预览服务，只切换到新的目标路径，不再额外起第二个端口 |
 | 代码升级后的端口复用 | 同一个项目根已经占用一个预览端口 | 升级运行时代码后，再从 Finder 或 VS Code / Codex 打开同一个仓库 | 先停掉旧进程，再在可回收时继续使用原端口，不悄悄换成新端口 |
@@ -88,6 +89,7 @@
 - Codex / VS Code 右键时只会看到一个 `Use Browser Priview`
 - adapter 已经激活后，预览运行时代码改动会在下一次右键打开时生效，不需要重启 Extension Host
 - 安装可选 patch 并重开 Codex 后，在 Codex 文件链接右键的 `Open With` 里能看到 `Use Browser Priview`
+- 从本地仓库装上的 Codex app patch，在后续本地 runtime 改动后不需要再跑一次安装也会跟上
 - Codex / VS Code 不再出现 `Docs Live` 或 `Use Browser Priview` 状态栏按钮
 - Finder 和编辑器两个入口打开后，看到的是同一类浏览器预览体验
 - 已安装的 VS Code、Finder 和 Codex-app runtime 都带上 `packages/runtime/`，而不是继续依赖某个 adapter 私有 runtime 副本
@@ -109,6 +111,7 @@
 - `bash install.sh` 能一次安装两条入口
 - `bash install.sh --codex-app` 能单独 patch Codex app，而不改变普通 VS Code / Finder 安装语义
 - Codex patch 安装同时要保留 clean backup bundle，卸载时能从这份 backup 恢复
+- 从本地仓库装上的 Codex patch 要保留一条回到仓库的 live reference，让后续本地 runtime 改动不需要再执行安装
 - Finder 和 VS Code / Codex 对同一个项目根会复用同一个端口
 - 同一个项目根在代码升级后，只要旧端口可回收，就继续使用原端口
 - 上面的核心验收用例在一台新机器上通过

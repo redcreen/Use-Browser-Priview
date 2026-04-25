@@ -29,6 +29,20 @@ resolve_node_bin() {
   return 1
 }
 
+link_local_source_repo_if_available() {
+  local runtime_dir="$1"
+  local source_repo=""
+  local source_link="$runtime_dir/source-repo"
+
+  rm -f "$source_link"
+
+  if source_repo="$(git -C "$REPO_ROOT" rev-parse --show-toplevel 2>/dev/null)" \
+    && [ -d "$source_repo" ] \
+    && [ -f "$source_repo/adapters/vscode/open-finder-preview.js" ]; then
+    ln -s "$source_repo" "$source_link"
+  fi
+}
+
 install_runtime() {
   local runtime_dir="$1"
   rm -rf "$runtime_dir"
@@ -39,6 +53,7 @@ install_runtime() {
   cp -R "$REPO_ROOT/packages/runtime" "$runtime_dir/packages/"
   cp "$CODEX_ADAPTER_DIR/open-codex-preview.sh" "$runtime_dir/"
   chmod +x "$runtime_dir/open-codex-preview.sh"
+  link_local_source_repo_if_available "$runtime_dir"
 }
 
 main() {

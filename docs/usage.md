@@ -49,7 +49,8 @@ Port reuse follows the project root, not the subdirectory you clicked.
 - after runtime upgrades, the same project root still keeps the same port when that old port can be reclaimed
 - the preview backend now runs under a dedicated supervisor, so that port is no longer tied to keeping the browser tab, Finder, and VS Code / Codex alive at the same time
 - a folder outside that project root starts a different preview port
-- if the Codex app patch is already installed, later `bash install.sh`, `--vscode`, or `--finder` runs also refresh the `codex-app` runtime automatically without requiring a full repatch each time
+- if the Codex app patch was installed from this local repo, the installed Codex wrapper follows this repo directly and picks up later runtime changes automatically
+- if the Codex app patch was installed from a snapshot, later `bash install.sh`, `--vscode`, or `--finder` runs also refresh the `codex-app` runtime automatically without requiring a full repatch each time
 
 ## Large Directory Behavior
 
@@ -118,7 +119,7 @@ When a Markdown table is being used as an image-browser grid like `search-result
 - VS Code still shows no menu right after the first install: reopen the current VS Code / Codex window once
 - runtime code changed but the next preview still looks old: trigger `Use Browser Priview` again so the active adapter swaps to the latest runtime
 - preview died overnight or after a host reload: inspect `~/Library/Application Support/Use Browser Priview/preview-supervisor.log` to see whether the supervisor or its preview child was terminated
-- opening from Codex app still behaves like an old build: run `bash install.sh` once so the installed `~/Library/Application Support/Use Browser Priview/codex-app` runtime is refreshed
+- opening from Codex app still behaves like an old build: local-repo installs should catch up on the next open automatically; snapshot installs need one `bash install.sh` so the installed `~/Library/Application Support/Use Browser Priview/codex-app` runtime is refreshed
 - Finder entry does not appear: right-click a folder item, not blank space
 - Codex app menu does not show `Use Browser Priview`: fully quit and reopen Codex after `--codex-app`
 - Browser does not open: make sure Node.js is installed and available in `PATH`

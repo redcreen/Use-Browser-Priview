@@ -174,6 +174,20 @@ install_shared_runtime() {
   install_tree "$REPO_ROOT/packages/runtime" "$target_dir/packages/runtime"
 }
 
+link_local_source_repo_if_available() {
+  local target_dir="$1"
+  local source_repo=""
+  local source_link="$target_dir/source-repo"
+
+  rm -f "$source_link"
+
+  if source_repo="$(git -C "$REPO_ROOT" rev-parse --show-toplevel 2>/dev/null)" \
+    && [ -d "$source_repo" ] \
+    && [ -f "$source_repo/adapters/vscode/open-finder-preview.js" ]; then
+    ln -s "$source_repo" "$source_link"
+  fi
+}
+
 install_codex_runtime_tree() {
   local target_dir="${1:-$CODEX_RUNTIME_DIR}"
   mkdir -p "$target_dir"
@@ -182,6 +196,7 @@ install_codex_runtime_tree() {
   install_shared_runtime "$target_dir"
   cp "$REPO_ROOT/adapters/codex-app/open-codex-preview.sh" "$target_dir/"
   chmod +x "$target_dir/open-codex-preview.sh"
+  link_local_source_repo_if_available "$target_dir"
 }
 
 sync_installed_codex_runtime_if_present() {

@@ -20,6 +20,7 @@ This project is risky in three places:
 | Finder only install | macOS, Finder path not installed yet | Run `bash install.sh --finder`, then right-click a folder item in Finder | Finder Quick Action appears and works without requiring a VS Code extension install |
 | Full install | macOS, clean machine or stale install | Run `bash install.sh` | VS Code and Finder entry points both install from one command |
 | Codex app patch install | macOS, Codex desktop app installed | Run `bash install.sh --codex-app`, fully quit Codex, reopen it, then right-click a file link inside Codex | `Open With` contains `Use Browser Priview` without affecting the normal VS Code / Finder install paths |
+| Codex app local-repo runtime follow | Codex app patch was installed from this local repo | Change the preview runtime in this repo, then open another file link from Codex without rerunning install | The installed Codex wrapper resolves back to this repo and uses the latest local runtime instead of a stale copied snapshot |
 | Codex app patch rollback | macOS, Codex app patch already installed | Run `bash adapters/codex-app/uninstall-codex-app.sh`, then fully quit and reopen Codex | Codex returns to the clean backup bundle and starts without the patch |
 | Cross-surface port reuse | A repo preview is already open from VS Code or Finder | Open a child directory from the other surface inside the same repo | The existing preview service is reused and the browser lands on the new target path without allocating a second port |
 | Port reuse after runtime upgrade | The same project root already has a preview session on one port | Upgrade the runtime code, then open the same repo again from Finder or VS Code / Codex | The old preview process is stopped, the original port is reclaimed when available, and the repo stays on the same port |
@@ -87,6 +88,7 @@ This project is risky in three places:
 - Codex / VS Code right click shows exactly one `Use Browser Priview`
 - after the adapter is already active, preview runtime changes apply on the next right-click open without restarting the Extension Host
 - Codex app file-link right click shows `Open With` -> `Use Browser Priview` after the optional patch is installed and Codex is relaunched
+- a Codex app patch installed from the local repo follows later local runtime edits without requiring another install
 - Codex / VS Code does not show a `Docs Live` or `Use Browser Priview` status-bar button
 - editor right-click and Finder right-click both land in the same preview behavior family
 - installed VS Code, Finder, and Codex-app runtimes each carry `packages/runtime/` instead of depending on an adapter-local runtime copy
@@ -108,6 +110,7 @@ This project is risky in three places:
 - `bash install.sh` installs both surfaces together
 - `bash install.sh --codex-app` patches Codex app without changing the normal VS Code / Finder install semantics
 - Codex patch install also preserves a clean backup bundle and uninstall restores from that backup
+- a local-repo Codex patch keeps a live reference back to the repo so later local runtime edits do not require rerunning install
 - Finder and VS Code / Codex reuse the same port for the same project root
 - the same project root keeps the same port across runtime upgrades when that port can be reclaimed
 - core acceptance cases above pass on a fresh machine

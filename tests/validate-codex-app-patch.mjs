@@ -152,6 +152,15 @@ function testInstallAndUninstall() {
       "Expected Codex runtime to include the shared browser preview runtime.",
     );
     assert(
+      fs.lstatSync(path.join(sandbox.supportDir, "codex-app", "source-repo")).isSymbolicLink(),
+      "Expected local Codex patch installs to keep a source-repo symlink.",
+    );
+    assert.equal(
+      fs.realpathSync(path.join(sandbox.supportDir, "codex-app", "source-repo")),
+      fs.realpathSync(repoRoot),
+      "Expected local Codex patch installs to point source-repo at the local Use Browser Priview repo.",
+    );
+    assert(
       fs.existsSync(backupAppPath),
       "Expected installer to create a clean backup Codex app bundle.",
     );
@@ -186,7 +195,54 @@ function testInstallAndUninstall() {
   }
 }
 
+function testWrapperPrefersSourceRepo() {
+  const sandboxRoot = fs.mkdtempSync(path.join(os.tmpdir(), "use-browser-priview-codex-runtime-"));
+  const runtimeDir = path.join(sandboxRoot, "codex-app");
+  const sourceRepo = path.join(sandboxRoot, "source-repo");
+  const homeDir = path.join(sandboxRoot, "home");
+  const resultFile = path.join(sandboxRoot, "result.txt");
+
+  try {
+    fs.mkdirSync(path.join(runtimeDir), { recursive: true });
+    fs.mkdirSync(path.join(sourceRepo, "adapters", "vscode"), { recursive: true });
+    fs.mkdirSync(homeDir, { recursive: true });
+    fs.copyFileSync(
+      path.join(repoRoot, "adapters", "codex-app", "open-codex-preview.sh"),
+      path.join(runtimeDir, "open-codex-preview.sh"),
+    );
+    fs.writeFileSync(
+      path.join(runtimeDir, "open-finder-preview.js"),
+      `require("node:fs").appendFileSync(${JSON.stringify(resultFile)}, "installed\\n");\n`,
+      "utf8",
+    );
+    fs.writeFileSync(
+      path.join(sourceRepo, "adapters", "vscode", "open-finder-preview.js"),
+      `require("node:fs").appendFileSync(${JSON.stringify(resultFile)}, "source\\n");\n`,
+      "utf8",
+    );
+    fs.symlinkSync(sourceRepo, path.join(runtimeDir, "source-repo"));
+
+    execFileSync("bash", [path.join(runtimeDir, "open-codex-preview.sh"), "/tmp/example.md"], {
+      env: {
+        ...process.env,
+        HOME: homeDir,
+        WORKSPACE_DOC_BROWSER_NODE_BIN: process.execPath,
+      },
+      stdio: "pipe",
+    });
+
+    assert.equal(
+      fs.readFileSync(resultFile, "utf8"),
+      "source\n",
+      "Expected the Codex wrapper to prefer the linked source repo runtime over the installed snapshot.",
+    );
+  } finally {
+    fs.rmSync(sandboxRoot, { recursive: true, force: true });
+  }
+}
+
 testPatchSource();
 testInstallAndUninstall();
+testWrapperPrefersSourceRepo();
 
 console.log("validate-codex-app-patch: ok");

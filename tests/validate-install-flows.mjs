@@ -76,6 +76,10 @@ function expectedCodexRuntimeDir(sandbox) {
   return path.join(sandbox.supportDir, "codex-app");
 }
 
+function expectedSourceRepoLink(runtimeDir) {
+  return path.join(runtimeDir, "source-repo");
+}
+
 function createSourceArchive(sandbox) {
   const archivePath = path.join(sandbox.tempRoot, "use-browser-priview-source.tar.gz");
   execFileSync(
@@ -203,6 +207,23 @@ function assertCodexRuntimeSynced(sandbox) {
   );
 }
 
+function assertSourceRepoLinked(runtimeDir) {
+  const sourceRepoLink = expectedSourceRepoLink(runtimeDir);
+  assert(fs.lstatSync(sourceRepoLink).isSymbolicLink(), "Expected runtime to expose a source-repo symlink for local installs.");
+  assert.equal(
+    fs.realpathSync(sourceRepoLink),
+    fs.realpathSync(repoRoot),
+    "Expected source-repo symlink to point at the local Use Browser Priview repo.",
+  );
+}
+
+function assertSourceRepoNotLinked(runtimeDir) {
+  assert(
+    !fs.existsSync(expectedSourceRepoLink(runtimeDir)),
+    "Expected snapshot installs not to keep a source-repo symlink.",
+  );
+}
+
 function assertMissing(targetPath, message) {
   assert(!fs.existsSync(targetPath), message);
 }
@@ -230,6 +251,7 @@ function testVscodeOnly() {
     assert(output.includes("menu does not appear yet"), "Expected VS Code install to explain the first-install fallback.");
     assertExtensionInstalled(sandbox);
     assertCodexRuntimeSynced(sandbox);
+    assertSourceRepoLinked(expectedCodexRuntimeDir(sandbox));
     assertMissing(legacyDir, "Expected legacy workspace-doc-browser copy to be removed.");
     assertMissing(sandbox.workflowDir, "VS Code-only install should not create a Finder workflow.");
     assertMissing(expectedFinderRuntimeDir(sandbox), "VS Code-only install should not create Finder runtime files.");
@@ -247,6 +269,7 @@ function testFinderOnly() {
     assert(output.includes("Synced installed Codex app runtime"), "Expected Finder install to refresh an already-installed Codex app runtime.");
     assertFinderInstalled(sandbox);
     assertCodexRuntimeSynced(sandbox);
+    assertSourceRepoLinked(expectedCodexRuntimeDir(sandbox));
     assertMissing(sandbox.extensionsDir, "Finder-only install should not create VS Code extension directories.");
   } finally {
     fs.rmSync(sandbox.tempRoot, { recursive: true, force: true });
@@ -265,6 +288,7 @@ function testAllInstall() {
     assertExtensionInstalled(sandbox);
     assertFinderInstalled(sandbox);
     assertCodexRuntimeSynced(sandbox);
+    assertSourceRepoLinked(expectedCodexRuntimeDir(sandbox));
     assertMissing(legacyDir, "Expected all-install mode to remove the legacy workspace-doc-browser copy.");
   } finally {
     fs.rmSync(sandbox.tempRoot, { recursive: true, force: true });
