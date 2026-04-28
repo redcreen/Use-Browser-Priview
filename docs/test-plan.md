@@ -15,6 +15,7 @@ This project is risky in three places:
 | --- | --- | --- | --- |
 | Folder preview from Finder | macOS, Finder Quick Action installed | Right-click a folder item and run `Use Browser Priview` | Browser opens the selected folder, not an unrelated repo root |
 | Markdown preview from Codex / VS Code | adapter installed, local Markdown file open | Right-click a Markdown editor and run `Use Browser Priview` | Browser opens the selected Markdown preview |
+| VS Code project-root detection | A Markdown file is opened directly from inside a repo subdirectory | Right-click the file in VS Code / Codex and run `Use Browser Priview` | Preview root is the nearest `.git` / `.hg` / `.svn` project root; if no marker exists under `~/`, the fallback root is `~/` |
 | VS Code only install | no current adapter or a legacy adapter copy present | Run `bash install.sh --vscode`; if the current window stays open and the menu is still missing, reopen the window once; then right-click Markdown in VS Code | The new adapter installs cleanly, legacy `workspace-doc-browser` copies are removed, and only one `Use Browser Priview` context action remains |
 | Remote VS Code one-line install | machine has curl access to the public repo | Run `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`; if the current window stays open and the menu is still missing, reopen the window once; then right-click Markdown in VS Code | The adapter installs without cloning the repo locally and the VS Code right-click entry works |
 | Finder only install | macOS, Finder path not installed yet | Run `bash install.sh --finder`, then right-click a folder item in Finder | Finder Quick Action appears and works without requiring a VS Code extension install |
@@ -80,6 +81,7 @@ This project is risky in three places:
 - shared runtime extraction contract via `node tests/validate-shared-runtime-layout.mjs`
 - shared session reuse contract via `node tests/validate-shared-session-store.mjs`
 - Codex desktop patch contract via `node tests/validate-codex-app-patch.mjs`
+- VS Code project-root detection via `node tests/validate-vscode-workspace-root-contract.mjs`
 
 ## Manual Checks
 

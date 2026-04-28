@@ -44,6 +44,7 @@ Notes:
 Port reuse follows the project root, not the subdirectory you clicked.
 
 - project root = the nearest parent that contains `.git`, `.hg`, or `.svn`
+- if no project marker is found, VS Code / Codex previews fall back upward only as far as `~/`
 - if no such marker exists, the selected folder itself becomes the root
 - the same project root keeps one preview port across Finder and VS Code / Codex
 - after runtime upgrades, the same project root still keeps the same port when that old port can be reclaimed

@@ -26,9 +26,17 @@ function buildSyntheticMainBundle() {
   ].join("");
 }
 
-function testPatchSource() {
-  const runtimeScriptPath = "/Users/redcreen/Library/Application Support/Use Browser Priview/codex-app/open-codex-preview.sh";
-  const originalSource = buildSyntheticMainBundle();
+function buildCurrentSyntheticMainBundle() {
+  return [
+    "var t={Or:(name)=>name};",
+    "var unrelated=[1,2,3],otherLogger=t.Or(`not-open-targets`);function other(e){return unrelated.flatMap(()=>[e])}",
+    "var td={id:`vscode`},Ku={id:`systemDefault`},lu={id:`fileManager`},_d={id:`zed`},Rl={id:`terminal`};",
+    "var Cd=[td,_d,Ku,lu,Rl],wd=t.Or(`open-in-targets`);",
+    "function Td(e){return Cd.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}",
+  ].join("");
+}
+
+function assertPatchedSource(originalSource, runtimeScriptPath, expectedArrayPrefix) {
   const patchedSource = patchMainBundleSource(originalSource, runtimeScriptPath);
 
   assert.notEqual(patchedSource, originalSource, "Expected main bundle patch to change the source.");
@@ -36,7 +44,7 @@ function testPatchSource() {
   assert(patchedSource.includes(`id:\`${TARGET_ID}\``), "Expected the Codex target id to be injected.");
   assert(patchedSource.includes(runtimeScriptPath), "Expected runtime script path to be embedded in the patch.");
   assert(
-    patchedSource.includes("Lc=[Cc,mc,js,_c,useBrowserPriviewCodexOpenTarget]"),
+    patchedSource.includes(expectedArrayPrefix),
     "Expected the Codex target to be appended to the open-target registry.",
   );
   assert(
@@ -46,6 +54,19 @@ function testPatchSource() {
 
   const patchedAgain = patchMainBundleSource(patchedSource, runtimeScriptPath);
   assert.equal(patchedAgain, patchedSource, "Expected patching to be idempotent.");
+}
+
+function testPatchSource() {
+  assertPatchedSource(
+    buildSyntheticMainBundle(),
+    "/Users/redcreen/Library/Application Support/Use Browser Priview/codex-app/open-codex-preview.sh",
+    "Lc=[Cc,mc,js,_c,useBrowserPriviewCodexOpenTarget]",
+  );
+  assertPatchedSource(
+    buildCurrentSyntheticMainBundle(),
+    "/Users/redcreen/Library/Application Support/Use Browser Priview/codex-app/open-codex-preview.sh",
+    "Cd=[td,_d,Ku,lu,Rl,useBrowserPriviewCodexOpenTarget]",
+  );
 }
 
 function createFakeCodexApp() {

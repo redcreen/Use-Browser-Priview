@@ -213,7 +213,8 @@ The stable Finder path is folder-item right-click. Blank-area Finder right-click
 Port reuse follows the project root, not the folder you clicked:
 
 - project root = the nearest parent that contains `.git`, `.hg`, or `.svn`
-- if no such marker exists, the selected folder itself becomes the root
+- for VS Code / Codex file previews, if no such marker exists, the root falls back upward only as far as `~/`
+- for Finder folder selections without a project marker, the selected folder itself remains the root
 - open `repo/docs/a/` and then `repo/docs/`: same port
 - open `repo/docs/a/` and then `repo/`: same port
 - update the runtime and open the same repo again: same port, as long as the old port can be reclaimed

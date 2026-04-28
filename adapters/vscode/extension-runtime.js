@@ -1,6 +1,7 @@
 "use strict";
 
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { resolveSharedRuntimePath } = require("./runtime-paths");
 const {
@@ -41,6 +42,55 @@ function getVscode() {
     vscodeModule = require("vscode");
   }
   return vscodeModule;
+}
+
+function hasWorkspaceMarker(directoryPath) {
+  for (const marker of [".git", ".hg", ".svn"]) {
+    if (fs.existsSync(path.join(directoryPath, marker))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isSameOrChildPathLocal(parentPath, childPath) {
+  const parent = path.resolve(parentPath);
+  const child = path.resolve(childPath);
+  const relative = path.relative(parent, child);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+function resolveSearchStart(targetPath) {
+  let searchStart = targetPath;
+  try {
+    const stat = fs.statSync(targetPath);
+    if (stat.isFile()) {
+      searchStart = path.dirname(targetPath);
+    }
+  } catch {
+    searchStart = path.dirname(targetPath);
+  }
+  return path.resolve(searchStart);
+}
+
+function resolveWorkspaceRootForPath(targetPath) {
+  let current = resolveSearchStart(targetPath);
+  const homeRoot = path.resolve(os.homedir());
+  const stopAtHome = isSameOrChildPathLocal(homeRoot, current);
+
+  while (true) {
+    if (hasWorkspaceMarker(current)) {
+      return current;
+    }
+    if (stopAtHome && current === homeRoot) {
+      return homeRoot;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return stopAtHome ? homeRoot : resolveSearchStart(targetPath);
+    }
+    current = parent;
+  }
 }
 
 class WorkspaceDocBrowser {
@@ -181,22 +231,10 @@ class WorkspaceDocBrowser {
     const vscode = getVscode();
     const normalizedTargetUri = this.normalizeTargetUri(targetUri);
     if (normalizedTargetUri) {
-      const folder = vscode.workspace.getWorkspaceFolder(normalizedTargetUri);
-      if (folder) {
-        return folder.uri.fsPath;
-      }
-      try {
-        const stat = fs.statSync(normalizedTargetUri.fsPath);
-        if (stat.isDirectory()) {
-          return normalizedTargetUri.fsPath;
-        }
-        if (stat.isFile()) {
-          return path.dirname(normalizedTargetUri.fsPath);
-        }
-      } catch {}
+      return resolveWorkspaceRootForPath(normalizedTargetUri.fsPath);
     }
     const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
-    return folder ? folder.uri.fsPath : null;
+    return folder ? resolveWorkspaceRootForPath(folder.uri.fsPath) : null;
   }
 
   pickDefaultMarkdownPath(workspaceRoot) {
@@ -497,6 +535,7 @@ class WorkspaceDocBrowser {
 module.exports = {
   OUTPUT_NAME,
   WorkspaceDocBrowser,
+  resolveWorkspaceRootForPath,
   createWorkspaceDocBrowser(context, options = {}) {
     return new WorkspaceDocBrowser(context, options);
   },

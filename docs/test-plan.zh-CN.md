@@ -16,6 +16,7 @@
 | --- | --- | --- | --- |
 | Finder 文件夹预览 | 已安装 Finder Quick Action | 对文件夹项右键执行 `Use Browser Priview` | 浏览器打开的是当前选中文件夹，而不是别的仓库根目录 |
 | Codex / VS Code Markdown 预览 | 已安装编辑器 adapter，且已打开本地 Markdown | 在编辑器里右键执行 `Use Browser Priview` | 浏览器打开当前 Markdown 的预览页 |
+| VS Code 项目根识别 | Markdown 文件是从某个仓库子目录里直接打开的 | 在 VS Code / Codex 里对这个文件右键执行 `Use Browser Priview` | 预览根目录是最近的 `.git` / `.hg` / `.svn` 项目根；如果 `~/` 下也找不到项目标记，就最多退到 `~/` |
 | 只装 VS Code | 当前没有 adapter 或存在旧 `workspace-doc-browser` 副本 | 执行 `bash install.sh --vscode`；如果当前窗口保持打开且菜单还没出现，就重开一次窗口；然后在 VS Code 里对 Markdown 右键 | 新 adapter 安装成功，旧 `workspace-doc-browser` 副本被清理，且只剩一个 `Use Browser Priview` 右键入口 |
 | VS Code 远程一条命令安装 | 机器可以通过 curl 访问公开仓库 | 执行 `curl -fsSL https://raw.githubusercontent.com/redcreen/Use-Browser-Priview/master/install.sh \| bash -s -- --vscode`；如果当前窗口保持打开且菜单还没出现，就重开一次窗口；然后在 VS Code 里对 Markdown 右键 | 不需要先 clone 仓库也能完成安装，并且 VS Code 右键入口可用 |
 | 只装 Finder | macOS，尚未安装 Finder 路径 | 执行 `bash install.sh --finder`，然后在 Finder 里对文件夹项右键 | Finder Quick Action 出现且可用，不依赖 VS Code 扩展安装 |
@@ -81,6 +82,7 @@
 - 共享 runtime 抽离约束：`node tests/validate-shared-runtime-layout.mjs`
 - 共享 session 复用约束：`node tests/validate-shared-session-store.mjs`
 - Codex 桌面 patch 约束：`node tests/validate-codex-app-patch.mjs`
+- VS Code 项目根识别约束：`node tests/validate-vscode-workspace-root-contract.mjs`
 
 ## 手工检查
 

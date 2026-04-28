@@ -215,7 +215,7 @@ function patchMainBundleSource(source, runtimeScriptPath) {
     return source;
   }
 
-  const registryPattern = /var\s+([A-Za-z_$][\w$]*)=\[([\s\S]*?)\],([A-Za-z_$][\w$]*)=e\.([A-Za-z_$][\w$]*)\(`open-in-targets`\);function\s+([A-Za-z_$][\w$]*)\(e\)\{return\s+\1\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/;
+  const registryPattern = /var\s+([A-Za-z_$][\w$]*)=\[([\s\S]*?)\],([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\(`open-in-targets`\);function\s+([A-Za-z_$][\w$]*)\(e\)\{return\s+\1\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/;
   const registryMatch = source.match(registryPattern);
   if (!registryMatch) {
     throw new Error("Unable to locate Codex open-target registry in the main bundle.");
@@ -229,8 +229,8 @@ function patchMainBundleSource(source, runtimeScriptPath) {
     `${targetsVarName}=[`,
   ].join(",");
 
-  return source.replace(registryPattern, (_match, _targetsVar, existingTargets, loggerVarName, loggerFactoryName, flattenFnName) => {
-    return `${patchPrelude}${existingTargets},${TARGET_VAR_NAME}],${loggerVarName}=e.${loggerFactoryName}(\`open-in-targets\`);function ${flattenFnName}(e){return ${targetsVarName}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}`;
+  return source.replace(registryPattern, (_match, _targetsVar, existingTargets, loggerVarName, loggerReceiver, loggerFactoryName, flattenFnName) => {
+    return `${patchPrelude}${existingTargets},${TARGET_VAR_NAME}],${loggerVarName}=${loggerReceiver}.${loggerFactoryName}(\`open-in-targets\`);function ${flattenFnName}(e){return ${targetsVarName}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}`;
   });
 }
 
